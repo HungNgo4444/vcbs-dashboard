@@ -52,7 +52,7 @@ interface DashboardData {
   error: string | null;
 }
 
-export function useDashboardData(filters: DashboardFilters) {
+export function useDashboardData(filters: DashboardFilters, enabled: boolean = true) {
   const [data, setData] = useState<DashboardData>({
     metrics: null,
     metricsComparison: { mentions: 0, engagement: 0, positive: 0, negative: 0, nsr: 0 },
@@ -407,8 +407,10 @@ export function useDashboardData(filters: DashboardFilters) {
   }, [supabase, filtersKey]);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    if (enabled) {
+      fetchData();
+    }
+  }, [fetchData, enabled]);
 
   return { ...data, refetch: fetchData };
 }

@@ -34,6 +34,7 @@ export default function DashboardPage() {
     }
   }, [authLoading, user, router]);
 
+  // Only fetch data when user is authenticated
   const {
     metrics,
     metricsComparison,
@@ -47,7 +48,7 @@ export default function DashboardPage() {
     isLoading,
     error,
     refetch,
-  } = useDashboardData(appliedFilters);
+  } = useDashboardData(appliedFilters, !authLoading && !!user);
 
   const handleUpload = async (file: File) => {
     setIsUploading(true);
