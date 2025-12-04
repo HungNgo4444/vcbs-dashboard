@@ -14,6 +14,8 @@ import type { ChannelDistribution } from '@/hooks/useDashboardData';
 interface ChannelDonutChartProps {
   data: ChannelDistribution[];
   dataKey: 'mentions' | 'engagement';
+  onChannelClick?: (channel: string) => void;
+  selectedChannel?: string | null;
 }
 
 interface ChartDataItem {
@@ -22,12 +24,21 @@ interface ChartDataItem {
   [key: string]: string | number;
 }
 
-export function ChannelDonutChart({ data, dataKey }: ChannelDonutChartProps) {
+export function ChannelDonutChart({ data, dataKey, onChannelClick, selectedChannel }: ChannelDonutChartProps) {
   // Transform data to the format recharts expects
   const chartData: ChartDataItem[] = data.map((item) => ({
     name: item.name,
     value: item[dataKey],
   }));
+
+  const hasSelection = selectedChannel !== null && selectedChannel !== undefined;
+
+  // Handle pie slice click
+  const handlePieClick = (data: ChartDataItem) => {
+    if (onChannelClick) {
+      onChannelClick(data.name);
+    }
+  };
 
   const total = chartData.reduce((sum, item) => sum + item.value, 0);
 
@@ -93,13 +104,22 @@ export function ChannelDonutChart({ data, dataKey }: ChannelDonutChartProps) {
           nameKey="name"
           strokeWidth={2}
           stroke="#fff"
+          onClick={handlePieClick}
+          style={{ cursor: onChannelClick ? 'pointer' : 'default' }}
         >
-          {chartData.map((entry) => (
-            <Cell
-              key={entry.name}
-              fill={CHANNEL_COLORS[entry.name] || '#999'}
-            />
-          ))}
+          {chartData.map((entry) => {
+            const isSelected = selectedChannel === entry.name;
+            const isDimmed = hasSelection && !isSelected;
+            return (
+              <Cell
+                key={entry.name}
+                fill={CHANNEL_COLORS[entry.name] || '#999'}
+                opacity={isDimmed ? 0.4 : 1}
+                stroke={isSelected ? '#1B4332' : '#fff'}
+                strokeWidth={isSelected ? 3 : 2}
+              />
+            );
+          })}
         </Pie>
         <Tooltip content={<CustomTooltip />} />
         <Legend

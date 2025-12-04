@@ -15,9 +15,25 @@ import type { ContentTypeDataPoint } from '@/types';
 
 interface ContentTypeStackChartProps {
   data: ContentTypeDataPoint[];
+  onContentTypeClick?: (contentType: string) => void;
+  selectedContentType?: string | null;
 }
 
-export function ContentTypeStackChart({ data }: ContentTypeStackChartProps) {
+export function ContentTypeStackChart({ data, onContentTypeClick, selectedContentType }: ContentTypeStackChartProps) {
+  const hasSelection = selectedContentType !== null && selectedContentType !== undefined;
+
+  // Handle bar click
+  const handleBarClick = (contentType: string) => {
+    if (onContentTypeClick) {
+      onContentTypeClick(contentType);
+    }
+  };
+
+  // Get opacity for a content type
+  const getOpacity = (contentType: string) => {
+    if (!hasSelection) return 1;
+    return selectedContentType === contentType ? 1 : 0.3;
+  };
   return (
     <ResponsiveContainer width="100%" height={260}>
       <BarChart data={data} layout="vertical" barCategoryGap="20%">
@@ -58,17 +74,26 @@ export function ContentTypeStackChart({ data }: ContentTypeStackChartProps) {
           stackId="a"
           fill={CONTENT_TYPE_COLORS['Tin tức thị trường']}
           radius={[0, 0, 0, 0]}
+          onClick={() => handleBarClick('Tin tức thị trường')}
+          style={{ cursor: onContentTypeClick ? 'pointer' : 'default' }}
+          opacity={getOpacity('Tin tức thị trường')}
         />
         <Bar
           dataKey="Bán hàng/Môi giới"
           stackId="a"
           fill={CONTENT_TYPE_COLORS['Bán hàng/Môi giới']}
+          onClick={() => handleBarClick('Bán hàng/Môi giới')}
+          style={{ cursor: onContentTypeClick ? 'pointer' : 'default' }}
+          opacity={getOpacity('Bán hàng/Môi giới')}
         />
         <Bar
           dataKey="Tin trực tiếp về thương hiệu"
           stackId="a"
           fill={CONTENT_TYPE_COLORS['Tin trực tiếp về thương hiệu']}
           radius={[0, 4, 4, 0]}
+          onClick={() => handleBarClick('Tin trực tiếp về thương hiệu')}
+          style={{ cursor: onContentTypeClick ? 'pointer' : 'default' }}
+          opacity={getOpacity('Tin trực tiếp về thương hiệu')}
         />
       </BarChart>
     </ResponsiveContainer>

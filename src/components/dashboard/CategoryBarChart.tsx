@@ -6,21 +6,33 @@ import type { CategoryDataPoint } from '@/types';
 interface CategoryBarChartProps {
   data: CategoryDataPoint[];
   maxMentions?: number;
+  onCategoryClick?: (category: string) => void;
+  selectedCategory?: string | null;
 }
 
-export function CategoryBarChart({ data, maxMentions }: CategoryBarChartProps) {
+export function CategoryBarChart({ data, maxMentions, onCategoryClick, selectedCategory }: CategoryBarChartProps) {
   // Calculate max mentions from data if not provided
   const maxValue = maxMentions || Math.max(...data.map((d) => d.mentions), 1);
 
+  const hasSelection = selectedCategory !== null && selectedCategory !== undefined;
+
   return (
     <div className="h-[600px] overflow-y-auto pr-2">
-      {data.map((item, idx) => (
+      {data.map((item, idx) => {
+        const isSelected = selectedCategory === item.name;
+        const isDimmed = hasSelection && !isSelected;
+
+        return (
         <div
           key={item.name}
-          className="flex items-center py-3"
+          className={`flex items-center py-3 transition-all duration-200 ${
+            onCategoryClick ? 'cursor-pointer hover:bg-forest-50' : ''
+          } ${isSelected ? 'bg-forest-100 rounded-lg px-2 -mx-2' : ''}`}
           style={{
             borderBottom: idx < data.length - 1 ? '1px solid #F0FDF4' : 'none',
+            opacity: isDimmed ? 0.4 : 1,
           }}
+          onClick={() => onCategoryClick?.(item.name)}
         >
           {/* Rank number */}
           <div
@@ -70,7 +82,8 @@ export function CategoryBarChart({ data, maxMentions }: CategoryBarChartProps) {
             )}
           </div>
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

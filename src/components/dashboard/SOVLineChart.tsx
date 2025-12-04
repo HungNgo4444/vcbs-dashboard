@@ -9,18 +9,34 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
+  ReferenceLine,
 } from 'recharts';
 import { CHANNEL_COLORS } from '@/lib/constants';
 import type { SOVDataPoint } from '@/types';
 
 interface SOVLineChartProps {
   data: SOVDataPoint[];
+  onDateClick?: (date: string) => void;
+  selectedDate?: string | null;
 }
 
-export function SOVLineChart({ data }: SOVLineChartProps) {
+export function SOVLineChart({ data, onDateClick, selectedDate }: SOVLineChartProps) {
+  const hasSelection = selectedDate !== null && selectedDate !== undefined;
+
+  // Handle click on chart area
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleChartClick = (state: any) => {
+    if (state?.activeLabel && onDateClick) {
+      onDateClick(String(state.activeLabel));
+    }
+  };
   return (
     <ResponsiveContainer width="100%" height={260}>
-      <LineChart data={data}>
+      <LineChart
+        data={data}
+        onClick={handleChartClick}
+        style={{ cursor: onDateClick ? 'pointer' : 'default' }}
+      >
         <CartesianGrid strokeDasharray="3 3" stroke="#E8F5E9" vertical={false} />
         <XAxis
           dataKey="date"
@@ -47,6 +63,15 @@ export function SOVLineChart({ data }: SOVLineChartProps) {
           iconType="circle"
           iconSize={8}
         />
+        {/* Show reference line for selected date */}
+        {hasSelection && selectedDate && (
+          <ReferenceLine
+            x={selectedDate}
+            stroke="#1B4332"
+            strokeWidth={2}
+            strokeDasharray="4 4"
+          />
+        )}
         {Object.entries(CHANNEL_COLORS).map(([key, color]) => (
           <Line
             key={key}
@@ -55,7 +80,8 @@ export function SOVLineChart({ data }: SOVLineChartProps) {
             stroke={color}
             strokeWidth={2.5}
             dot={false}
-            activeDot={{ r: 5, fill: color, stroke: '#fff', strokeWidth: 2 }}
+            activeDot={{ r: 6, fill: color, stroke: '#fff', strokeWidth: 2 }}
+            opacity={hasSelection ? 0.7 : 1}
           />
         ))}
       </LineChart>

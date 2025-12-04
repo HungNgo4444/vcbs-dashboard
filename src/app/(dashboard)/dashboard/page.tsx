@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useFilters } from '@/hooks/useFilters';
@@ -15,10 +15,18 @@ import { CategoryBarChart } from '@/components/dashboard/CategoryBarChart';
 import { ArticlesTable } from '@/components/dashboard/ArticlesTable';
 import { AdminBar } from '@/components/admin/AdminBar';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
-import { format } from 'date-fns';
-import { ArrowRight, MessageSquare, TrendingUp } from 'lucide-react';
+import { format, parseISO } from 'date-fns';
+import { ArrowRight, MessageSquare, TrendingUp, X } from 'lucide-react';
 
 type ViewMode = 'mentions' | 'engagement';
+
+// Cross-filter state interface
+interface CrossFilter {
+  date: string | null;        // "dd/MM" from Line Chart
+  channel: string | null;     // Channel name from Donut Chart
+  category: string | null;    // Category from Bar Chart
+  contentType: string | null; // Content Type from Stack Chart
+}
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -26,6 +34,49 @@ export default function DashboardPage() {
   const { filters, appliedFilters, updateFilters, applyFilters, resetFilters } = useFilters();
   const [isUploading, setIsUploading] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('mentions');
+
+  // Cross-filter state for Power BI-like filtering
+  const [crossFilter, setCrossFilter] = useState<CrossFilter>({
+    date: null,
+    channel: null,
+    category: null,
+    contentType: null,
+  });
+
+  // Cross-filter handlers
+  const handleDateClick = (date: string) => {
+    setCrossFilter(prev => ({
+      ...prev,
+      date: prev.date === date ? null : date,
+    }));
+  };
+
+  const handleChannelClick = (channel: string) => {
+    setCrossFilter(prev => ({
+      ...prev,
+      channel: prev.channel === channel ? null : channel,
+    }));
+  };
+
+  const handleCategoryClick = (category: string) => {
+    setCrossFilter(prev => ({
+      ...prev,
+      category: prev.category === category ? null : category,
+    }));
+  };
+
+  const handleContentTypeClick = (contentType: string) => {
+    setCrossFilter(prev => ({
+      ...prev,
+      contentType: prev.contentType === contentType ? null : contentType,
+    }));
+  };
+
+  const clearCrossFilter = () => {
+    setCrossFilter({ date: null, channel: null, category: null, contentType: null });
+  };
+
+  const hasCrossFilter = crossFilter.date || crossFilter.channel || crossFilter.category || crossFilter.contentType;
 
   // Debug logging
   console.log('[Dashboard] Auth state:', { authLoading, user: user?.id, isAdmin });
@@ -56,6 +107,27 @@ export default function DashboardPage() {
     error,
     refetch,
   } = useDashboardData(appliedFilters, dataEnabled);
+
+  // Filter articles client-side based on cross-filter (Power BI-like)
+  const filteredArticles = useMemo(() => {
+    if (!hasCrossFilter) return articles;
+
+    return articles.filter(article => {
+      // Date filter (format: "dd/MM")
+      if (crossFilter.date) {
+        const articleDate = format(parseISO(article.published_date), 'dd/MM');
+        if (articleDate !== crossFilter.date) return false;
+      }
+      // Channel filter
+      if (crossFilter.channel && article.channel !== crossFilter.channel) return false;
+      // Category filter
+      if (crossFilter.category && article.category !== crossFilter.category) return false;
+      // Content type filter
+      if (crossFilter.contentType && article.content_type !== crossFilter.contentType) return false;
+
+      return true;
+    });
+  }, [articles, crossFilter, hasCrossFilter]);
 
   const handleUpload = async (file: File) => {
     setIsUploading(true);
@@ -206,6 +278,51 @@ export default function DashboardPage() {
               </button>
             </div>
 
+            {/* Cross-Filter Indicator */}
+            {hasCrossFilter && (
+              <div className="flex items-center gap-2 mb-5 px-4 py-2.5 bg-forest-50 rounded-lg border border-forest-200">
+                <span className="text-xs text-forest-700 font-medium">Đang lọc:</span>
+                {crossFilter.date && (
+                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-white rounded-md text-xs font-medium text-forest-800 border border-forest-200">
+                    Ngày: {crossFilter.date}
+                    <button onClick={() => setCrossFilter(prev => ({ ...prev, date: null }))} className="hover:text-red-600">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                )}
+                {crossFilter.channel && (
+                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-white rounded-md text-xs font-medium text-forest-800 border border-forest-200">
+                    {crossFilter.channel}
+                    <button onClick={() => setCrossFilter(prev => ({ ...prev, channel: null }))} className="hover:text-red-600">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                )}
+                {crossFilter.category && (
+                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-white rounded-md text-xs font-medium text-forest-800 border border-forest-200">
+                    {crossFilter.category}
+                    <button onClick={() => setCrossFilter(prev => ({ ...prev, category: null }))} className="hover:text-red-600">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                )}
+                {crossFilter.contentType && (
+                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-white rounded-md text-xs font-medium text-forest-800 border border-forest-200">
+                    {crossFilter.contentType}
+                    <button onClick={() => setCrossFilter(prev => ({ ...prev, contentType: null }))} className="hover:text-red-600">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                )}
+                <button
+                  onClick={clearCrossFilter}
+                  className="ml-auto text-xs text-red-600 hover:text-red-700 font-medium"
+                >
+                  Xóa tất cả
+                </button>
+              </div>
+            )}
+
             {/* Charts Row 1: Donut + Line Chart + Content Type */}
             <div className="grid grid-cols-[1fr_1.6fr_1fr] gap-5 mb-5">
               {/* Channel Donut Chart */}
@@ -216,6 +333,8 @@ export default function DashboardPage() {
                 <ChannelDonutChart
                   data={channelDistribution}
                   dataKey={viewMode === 'mentions' ? 'mentions' : 'engagement'}
+                  onChannelClick={handleChannelClick}
+                  selectedChannel={crossFilter.channel}
                 />
               </ChartCard>
 
@@ -224,7 +343,11 @@ export default function DashboardPage() {
                 title="Share of Voice theo Kênh"
                 subtitle={`Xu hướng ${viewMode === 'mentions' ? 'đề cập' : 'tương tác'} - ${getFilterPeriodText()}`}
               >
-                <SOVLineChart data={viewMode === 'mentions' ? sovData : engagementSovData} />
+                <SOVLineChart
+                  data={viewMode === 'mentions' ? sovData : engagementSovData}
+                  onDateClick={handleDateClick}
+                  selectedDate={crossFilter.date}
+                />
               </ChartCard>
 
               {/* Content Type Stacked Chart */}
@@ -232,7 +355,11 @@ export default function DashboardPage() {
                 title="Phân bổ Nội dung theo Thể loại"
                 subtitle="Tỷ lệ % theo từng tháng"
               >
-                <ContentTypeStackChart data={contentTypeData} />
+                <ContentTypeStackChart
+                  data={contentTypeData}
+                  onContentTypeClick={handleContentTypeClick}
+                  selectedContentType={crossFilter.contentType}
+                />
               </ChartCard>
             </div>
 
@@ -243,12 +370,16 @@ export default function DashboardPage() {
                 title="Đề cập theo Category"
                 subtitle="Top categories & thay đổi xếp hạng"
               >
-                <CategoryBarChart data={categoryData} />
+                <CategoryBarChart
+                  data={categoryData}
+                  onCategoryClick={handleCategoryClick}
+                  selectedCategory={crossFilter.category}
+                />
               </ChartCard>
 
               {/* Articles Table */}
               <ChartCard
-                title="Bảng tin Chi tiết"
+                title={`Bảng tin Chi tiết${hasCrossFilter ? ` (${filteredArticles.length}/${articles.length})` : ''}`}
                 subtitle="Danh sách bài viết mới nhất"
                 action={
                   <button className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-forest-800 font-semibold text-xs bg-forest-50 border border-forest-200 hover:bg-forest-100 transition-colors">
@@ -258,7 +389,7 @@ export default function DashboardPage() {
                 }
               >
                 <ArticlesTable
-                  articles={articles}
+                  articles={filteredArticles}
                   maxHeight={600}
                 />
               </ChartCard>
