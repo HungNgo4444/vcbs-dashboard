@@ -40,35 +40,25 @@ export function useAuth() {
   }, [supabase]);
 
   useEffect(() => {
-    const getUser = async () => {
-      console.log('[useAuth] Getting user...');
-      const { data: { user }, error } = await supabase.auth.getUser();
-      console.log('[useAuth] getUser result:', { userId: user?.id, error: error?.message });
+    // Use getSession() instead of getUser() - it reads from local storage, no network call
+    // This prevents hanging when session is stale
+    const initAuth = async () => {
+      console.log('[useAuth] Initializing auth with getSession()...');
 
-      if (user) {
-        const profile = await fetchProfile(user.id);
-        console.log('[useAuth] Setting state with user:', user.id);
-        setState({
-          user,
-          profile,
-          isLoading: false,
-          isAdmin: profile?.role === 'admin',
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        console.log('[useAuth] getSession result:', {
+          hasSession: !!session,
+          userId: session?.user?.id,
+          error: error?.message
         });
-      } else {
-        console.log('[useAuth] No user found, setting isLoading: false');
-        setState({
-          user: null,
-          profile: null,
-          isLoading: false,
-          isAdmin: false,
-        });
-      }
-    };
 
-    getUser();
+        if (error) {
+          console.error('[useAuth] Session error:', error);
+          setState({ user: null, profile: null, isLoading: false, isAdmin: false });
+          return;
+        }
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
         if (session?.user) {
           const profile = await fetchProfile(session.user.id);
           setState({
@@ -76,6 +66,34 @@ export function useAuth() {
             profile,
             isLoading: false,
             isAdmin: profile?.role === 'admin',
+          });
+        } else {
+          setState({ user: null, profile: null, isLoading: false, isAdmin: false });
+        }
+      } catch (err) {
+        console.error('[useAuth] Error initializing auth:', err);
+        setState({ user: null, profile: null, isLoading: false, isAdmin: false });
+      }
+    };
+
+    initAuth();
+
+    // IMPORTANT: Do NOT use async in onAuthStateChange callback!
+    // This is a known Supabase bug that causes hanging.
+    // See: https://github.com/supabase/supabase/issues/35754
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        console.log('[useAuth] Auth state changed:', event);
+
+        if (session?.user) {
+          // Use .then() instead of await to avoid async callback
+          fetchProfile(session.user.id).then((profile) => {
+            setState({
+              user: session.user,
+              profile,
+              isLoading: false,
+              isAdmin: profile?.role === 'admin',
+            });
           });
         } else {
           setState({
