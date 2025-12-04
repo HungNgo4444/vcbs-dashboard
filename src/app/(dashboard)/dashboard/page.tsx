@@ -27,12 +27,19 @@ export default function DashboardPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('mentions');
 
+  // Debug logging
+  console.log('[Dashboard] Auth state:', { authLoading, user: user?.id, isAdmin });
+
   // Auth guard: redirect to login if not authenticated
   useEffect(() => {
     if (!authLoading && !user) {
+      console.log('[Dashboard] No user, redirecting to login');
       router.replace('/login');
     }
   }, [authLoading, user, router]);
+
+  const dataEnabled = !authLoading && !!user;
+  console.log('[Dashboard] Data fetch enabled:', dataEnabled);
 
   // Only fetch data when user is authenticated
   const {
@@ -48,7 +55,7 @@ export default function DashboardPage() {
     isLoading,
     error,
     refetch,
-  } = useDashboardData(appliedFilters, !authLoading && !!user);
+  } = useDashboardData(appliedFilters, dataEnabled);
 
   const handleUpload = async (file: File) => {
     setIsUploading(true);

@@ -41,10 +41,13 @@ export function useAuth() {
 
   useEffect(() => {
     const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      console.log('[useAuth] Getting user...');
+      const { data: { user }, error } = await supabase.auth.getUser();
+      console.log('[useAuth] getUser result:', { userId: user?.id, error: error?.message });
 
       if (user) {
         const profile = await fetchProfile(user.id);
+        console.log('[useAuth] Setting state with user:', user.id);
         setState({
           user,
           profile,
@@ -52,6 +55,7 @@ export function useAuth() {
           isAdmin: profile?.role === 'admin',
         });
       } else {
+        console.log('[useAuth] No user found, setting isLoading: false');
         setState({
           user: null,
           profile: null,

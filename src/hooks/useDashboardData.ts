@@ -407,7 +407,9 @@ export function useDashboardData(filters: DashboardFilters, enabled: boolean = t
   }, [supabase, filtersKey]);
 
   useEffect(() => {
+    console.log('[useDashboardData] Effect triggered, enabled:', enabled);
     if (enabled) {
+      console.log('[useDashboardData] Starting fetchData...');
       fetchData();
     }
   }, [fetchData, enabled]);
