@@ -12,6 +12,9 @@ import type {
 } from '@/types';
 import { format, parseISO, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 
+// Timeout for fetch requests (30 seconds)
+const FETCH_TIMEOUT = 30000;
+
 // Engagement SOV type for toggle feature
 export interface EngagementSOVDataPoint {
   date: string;
@@ -80,6 +83,16 @@ export function useDashboardData(filters: DashboardFilters) {
     // Helper to check if this request is still valid
     const isStale = () => requestIdRef.current !== currentRequestId;
 
+    // Helper to add timeout to promises (accepts PromiseLike for Supabase compatibility)
+    const withTimeout = <T>(promise: PromiseLike<T>, timeoutMs: number = FETCH_TIMEOUT): Promise<T> => {
+      return Promise.race([
+        Promise.resolve(promise),
+        new Promise<T>((_, reject) =>
+          setTimeout(() => reject(new Error('Request timeout - vui lòng thử lại')), timeoutMs)
+        ),
+      ]);
+    };
+
     try {
       // Build base query with filters
       let baseQuery = supabase.from('mentions').select('*', { count: 'exact' });
@@ -110,8 +123,8 @@ export function useDashboardData(filters: DashboardFilters) {
         baseQuery = baseQuery.gte('published_date', startDate).lte('published_date', endDate);
       }
 
-      // Fetch current period data
-      const { data: allMentions, error: mentionsError, count } = await baseQuery;
+      // Fetch current period data with timeout
+      const { data: allMentions, error: mentionsError, count } = await withTimeout(baseQuery);
 
       if (mentionsError) throw mentionsError;
 

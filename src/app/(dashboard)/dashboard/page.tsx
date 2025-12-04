@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useFilters } from '@/hooks/useFilters';
 import { useDashboardData } from '@/hooks/useDashboardData';
@@ -20,10 +21,18 @@ import { ArrowRight, MessageSquare, TrendingUp } from 'lucide-react';
 type ViewMode = 'mentions' | 'engagement';
 
 export default function DashboardPage() {
-  const { isAdmin } = useAuth();
+  const router = useRouter();
+  const { user, isLoading: authLoading, isAdmin } = useAuth();
   const { filters, appliedFilters, updateFilters, applyFilters, resetFilters } = useFilters();
   const [isUploading, setIsUploading] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('mentions');
+
+  // Auth guard: redirect to login if not authenticated
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.replace('/login');
+    }
+  }, [authLoading, user, router]);
 
   const {
     metrics,
@@ -76,6 +85,24 @@ export default function DashboardPage() {
     }
     return 'Tất cả thời gian';
   };
+
+  // Show loading while checking authentication
+  if (authLoading) {
+    return (
+      <div className="min-h-[400px] flex items-center justify-center">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
+
+  // Don't render if not authenticated (redirect is in progress)
+  if (!user) {
+    return (
+      <div className="min-h-[400px] flex items-center justify-center">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
 
   if (error) {
     return (

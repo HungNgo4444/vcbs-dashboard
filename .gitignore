@@ -61,3 +61,6 @@ logs/
 # OS generated files
 Thumbs.db
 ehthumbs.db
+
+.vercel
+.env*.local
