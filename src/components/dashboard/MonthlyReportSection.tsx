@@ -67,6 +67,8 @@ export function MonthlyReportSection({ month, year, isAdmin }: MonthlyReportSect
       <ChartCard
         title={title}
         subtitle={subtitle}
+        centeredTitle
+        largeTitle
         action={
           isAdmin ? (
             <Link
@@ -83,9 +85,9 @@ export function MonthlyReportSection({ month, year, isAdmin }: MonthlyReportSect
           <div className="max-w-4xl mx-auto">
             <div className="prose prose-sm max-w-none
               prose-headings:text-forest-800 prose-headings:font-bold
-              prose-h1:text-2xl prose-h1:text-center prose-h1:border-b prose-h1:border-forest-200 prose-h1:pb-3 prose-h1:mb-6
-              prose-h2:text-xl prose-h2:text-center prose-h2:mt-8 prose-h2:mb-4
-              prose-h3:text-lg prose-h3:mt-6 prose-h3:mb-3
+              prose-h1:text-xl prose-h1:border-b prose-h1:border-forest-200 prose-h1:pb-2 prose-h1:mb-4
+              prose-h2:text-lg prose-h2:mt-6 prose-h2:mb-3
+              prose-h3:text-base prose-h3:mt-4 prose-h3:mb-2
               prose-p:text-gray-700 prose-p:leading-relaxed
               prose-a:text-forest-600 prose-a:no-underline hover:prose-a:underline
               prose-strong:text-forest-800 prose-strong:font-semibold
