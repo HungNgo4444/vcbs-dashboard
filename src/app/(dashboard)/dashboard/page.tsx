@@ -13,6 +13,7 @@ import { ChannelDonutChart } from '@/components/dashboard/ChannelDonutChart';
 import { ContentTypeStackChart } from '@/components/dashboard/ContentTypeStackChart';
 import { CategoryBarChart } from '@/components/dashboard/CategoryBarChart';
 import { ArticlesTable } from '@/components/dashboard/ArticlesTable';
+import { MonthlyReportSection } from '@/components/dashboard/MonthlyReportSection';
 import { AdminBar } from '@/components/admin/AdminBar';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import { format, parseISO } from 'date-fns';
@@ -393,6 +394,15 @@ export default function DashboardPage() {
                   maxHeight={600}
                 />
               </ChartCard>
+            </div>
+
+            {/* Monthly Report Section */}
+            <div className="mb-5">
+              <MonthlyReportSection
+                month={appliedFilters.month}
+                year={appliedFilters.year}
+                isAdmin={isAdmin}
+              />
             </div>
 
             {/* Footer Info */}

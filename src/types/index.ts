@@ -65,6 +65,17 @@ export interface CategoryRanking {
   created_at: string;
 }
 
+export interface MonthlyReport {
+  id: string;
+  month: number;
+  year: number;
+  title: string;
+  content: string;
+  author_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 // Enum types
 export type Channel = 'Báo mạng' | 'Facebook' | 'Youtube' | 'Tiktok';
 export type Sentiment = 'Tích cực' | 'Tiêu cực' | 'Trung tính';
