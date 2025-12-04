@@ -80,7 +80,7 @@ export function MonthlyReportSection({ month, year, isAdmin }: MonthlyReportSect
         }
       >
         {report ? (
-          <div>
+          <div className="max-w-4xl mx-auto">
             <div className="prose prose-sm max-w-none
               prose-headings:text-forest-800 prose-headings:font-bold
               prose-h1:text-xl prose-h1:border-b prose-h1:border-forest-200 prose-h1:pb-2 prose-h1:mb-4
