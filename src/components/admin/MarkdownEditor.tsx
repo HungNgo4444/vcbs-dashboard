@@ -110,7 +110,22 @@ export function MarkdownEditor({ value, onChange, placeholder }: MarkdownEditorP
           <div className="text-xs text-gray-500 uppercase tracking-wide mb-3 font-semibold">
             Preview
           </div>
-          <div className="prose prose-sm prose-forest max-w-none">
+          <div className="prose prose-sm max-w-none
+            prose-headings:text-forest-800 prose-headings:font-bold
+            prose-h1:text-xl prose-h1:border-b prose-h1:border-forest-200 prose-h1:pb-2 prose-h1:mb-4
+            prose-h2:text-lg prose-h2:mt-6 prose-h2:mb-3
+            prose-h3:text-base prose-h3:mt-4 prose-h3:mb-2
+            prose-p:text-gray-700 prose-p:leading-relaxed
+            prose-a:text-forest-600 prose-a:no-underline hover:prose-a:underline
+            prose-strong:text-forest-800 prose-strong:font-semibold
+            prose-ul:my-2 prose-ol:my-2
+            prose-li:text-gray-700 prose-li:my-1
+            prose-blockquote:border-l-4 prose-blockquote:border-forest-400 prose-blockquote:bg-forest-50 prose-blockquote:py-2 prose-blockquote:px-4 prose-blockquote:not-italic prose-blockquote:text-forest-800
+            prose-table:border-collapse prose-table:w-full prose-table:my-4
+            prose-th:bg-forest-100 prose-th:text-forest-800 prose-th:font-semibold prose-th:text-left prose-th:px-3 prose-th:py-2 prose-th:border prose-th:border-forest-200
+            prose-td:px-3 prose-td:py-2 prose-td:border prose-td:border-forest-200 prose-td:text-gray-700
+            prose-hr:border-forest-200
+          ">
             <ReactMarkdown remarkPlugins={[remarkGfm]}>
               {value || '*Chưa có nội dung*'}
             </ReactMarkdown>
