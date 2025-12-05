@@ -26,16 +26,97 @@ export function MermaidBlock({ chart }: MermaidBlockProps) {
         if (!mermaidInitialized) {
           mermaid.initialize({
             startOnLoad: false,
-            theme: 'default',
+            theme: 'base',
             securityLevel: 'loose',
             fontFamily: 'inherit',
             themeVariables: {
+              // Base forest theme colors
               primaryColor: '#52B788',
               primaryTextColor: '#1B4332',
               primaryBorderColor: '#2D6A4F',
               lineColor: '#40916C',
-              secondaryColor: '#D8F3DC',
-              tertiaryColor: '#F0FFF4',
+              secondaryColor: '#95D5B2',
+              tertiaryColor: '#D8F3DC',
+
+              // Background - light theme
+              background: '#FFFFFF',
+              mainBkg: '#F0FFF4',
+              secondBkg: '#D8F3DC',
+
+              // Text colors
+              textColor: '#1B4332',
+              titleColor: '#1B4332',
+              nodeTextColor: '#1B4332',
+
+              // Pie chart specific - forest palette
+              pie1: '#52B788',
+              pie2: '#74C69D',
+              pie3: '#2D6A4F',
+              pie4: '#95D5B2',
+              pie5: '#40916C',
+              pie6: '#B7E4C7',
+              pie7: '#1B4332',
+              pie8: '#D8F3DC',
+              pie9: '#368A5E',
+              pie10: '#A3D9BB',
+              pie11: '#245C3D',
+              pie12: '#C5EBDA',
+              pieTitleTextSize: '16px',
+              pieTitleTextColor: '#1B4332',
+              pieSectionTextSize: '14px',
+              pieSectionTextColor: '#FFFFFF',
+              pieLegendTextSize: '14px',
+              pieLegendTextColor: '#1B4332',
+              pieStrokeColor: '#FFFFFF',
+              pieStrokeWidth: '2px',
+              pieOuterStrokeWidth: '2px',
+              pieOuterStrokeColor: '#FFFFFF',
+              pieOpacity: '1',
+
+              // Flowchart
+              nodeBorder: '#2D6A4F',
+              clusterBkg: '#D8F3DC',
+              clusterBorder: '#52B788',
+              defaultLinkColor: '#40916C',
+              edgeLabelBackground: '#F0FFF4',
+
+              // Sequence diagram
+              actorBkg: '#52B788',
+              actorBorder: '#2D6A4F',
+              actorTextColor: '#FFFFFF',
+              actorLineColor: '#40916C',
+              signalColor: '#1B4332',
+              signalTextColor: '#1B4332',
+              labelBoxBkgColor: '#D8F3DC',
+              labelBoxBorderColor: '#52B788',
+              labelTextColor: '#1B4332',
+              loopTextColor: '#1B4332',
+              noteBkgColor: '#D8F3DC',
+              noteBorderColor: '#52B788',
+              noteTextColor: '#1B4332',
+
+              // State diagram
+              labelColor: '#1B4332',
+              altBackground: '#D8F3DC',
+
+              // Class diagram
+              classText: '#1B4332',
+
+              // Git graph
+              git0: '#52B788',
+              git1: '#74C69D',
+              git2: '#2D6A4F',
+              git3: '#95D5B2',
+              git4: '#40916C',
+              git5: '#B7E4C7',
+              git6: '#1B4332',
+              git7: '#D8F3DC',
+              gitBranchLabel0: '#FFFFFF',
+              gitBranchLabel1: '#FFFFFF',
+              gitBranchLabel2: '#FFFFFF',
+              gitBranchLabel3: '#1B4332',
+              commitLabelColor: '#1B4332',
+              commitLabelBackground: '#D8F3DC',
             },
           });
           mermaidInitialized = true;
