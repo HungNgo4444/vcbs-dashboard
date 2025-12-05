@@ -1,27 +1,13 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import mermaid from 'mermaid';
-
-// Initialize mermaid with config
-mermaid.initialize({
-  startOnLoad: false,
-  theme: 'default',
-  securityLevel: 'loose',
-  fontFamily: 'inherit',
-  themeVariables: {
-    primaryColor: '#52B788',
-    primaryTextColor: '#1B4332',
-    primaryBorderColor: '#2D6A4F',
-    lineColor: '#40916C',
-    secondaryColor: '#D8F3DC',
-    tertiaryColor: '#F0FFF4',
-  },
-});
 
 interface MermaidBlockProps {
   chart: string;
 }
+
+// Track if mermaid has been initialized
+let mermaidInitialized = false;
 
 export function MermaidBlock({ chart }: MermaidBlockProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -30,9 +16,31 @@ export function MermaidBlock({ chart }: MermaidBlockProps) {
 
   useEffect(() => {
     const renderChart = async () => {
-      if (!containerRef.current || !chart.trim()) return;
+      if (!chart.trim()) return;
 
       try {
+        // Dynamic import mermaid to avoid SSR issues
+        const mermaid = (await import('mermaid')).default;
+
+        // Initialize only once
+        if (!mermaidInitialized) {
+          mermaid.initialize({
+            startOnLoad: false,
+            theme: 'default',
+            securityLevel: 'loose',
+            fontFamily: 'inherit',
+            themeVariables: {
+              primaryColor: '#52B788',
+              primaryTextColor: '#1B4332',
+              primaryBorderColor: '#2D6A4F',
+              lineColor: '#40916C',
+              secondaryColor: '#D8F3DC',
+              tertiaryColor: '#F0FFF4',
+            },
+          });
+          mermaidInitialized = true;
+        }
+
         // Generate unique ID for this diagram
         const id = `mermaid-${Math.random().toString(36).substr(2, 9)}`;
 
