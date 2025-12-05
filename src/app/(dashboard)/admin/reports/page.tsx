@@ -18,7 +18,8 @@ import {
   Calendar,
 } from 'lucide-react';
 import Link from 'next/link';
-import type { MonthlyReport } from '@/types';
+import type { MonthlyReport, ReportType } from '@/types';
+import { REPORT_TYPES } from '@/types';
 
 const MONTHS = [
   { value: 1, label: 'Tháng 1' },
@@ -44,12 +45,16 @@ interface FormData {
   year: number;
   title: string;
   content: string;
+  report_type: ReportType;
 }
 
 export default function AdminReportsPage() {
   const { isAdmin, isLoading: authLoading } = useAuth();
   const router = useRouter();
-  const { reports, isLoading, error, createReport, updateReport, deleteReport } = useMonthlyReports();
+  const [activeTab, setActiveTab] = useState<ReportType>('nhan_dinh');
+  const { reports, isLoading, error, createReport, updateReport, deleteReport } = useMonthlyReports({
+    reportType: activeTab,
+  });
 
   const [isEditing, setIsEditing] = useState(false);
   const [editingReport, setEditingReport] = useState<MonthlyReport | null>(null);
@@ -61,7 +66,10 @@ export default function AdminReportsPage() {
     year: currentYear,
     title: '',
     content: '',
+    report_type: activeTab,
   });
+
+  const activeTabLabel = REPORT_TYPES.find(t => t.value === activeTab)?.label || 'Báo cáo';
 
   useEffect(() => {
     if (!authLoading && !isAdmin) {
@@ -76,6 +84,7 @@ export default function AdminReportsPage() {
       year: currentYear,
       title: '',
       content: '',
+      report_type: activeTab,
     });
     setFormError(null);
     setIsEditing(true);
@@ -88,6 +97,7 @@ export default function AdminReportsPage() {
       year: report.year,
       title: report.title,
       content: report.content,
+      report_type: report.report_type,
     });
     setFormError(null);
     setIsEditing(true);
@@ -160,9 +170,9 @@ export default function AdminReportsPage() {
         </Link>
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-forest-800">Quản lý Nhận định Báo cáo</h1>
+            <h1 className="text-2xl font-bold text-forest-800">Quản lý Báo cáo</h1>
             <p className="text-gray-500 text-sm mt-1">
-              Tạo và chỉnh sửa nhận định báo cáo hàng tháng
+              Tạo và chỉnh sửa báo cáo hàng tháng
             </p>
           </div>
           {!isEditing && (
@@ -171,11 +181,33 @@ export default function AdminReportsPage() {
               className="flex items-center gap-2 px-4 py-2.5 bg-forest-600 text-white rounded-lg hover:bg-forest-700 transition-colors font-medium text-sm"
             >
               <Plus className="w-4 h-4" />
-              Tạo nhận định mới
+              Tạo {activeTabLabel.toLowerCase()} mới
             </button>
           )}
         </div>
       </div>
+
+      {/* Tabs */}
+      {!isEditing && (
+        <div className="flex border-b border-forest-200 mb-6">
+          {REPORT_TYPES.map((type) => (
+            <button
+              key={type.value}
+              onClick={() => setActiveTab(type.value)}
+              className={`px-5 py-3 font-medium text-sm transition-colors relative
+                ${activeTab === type.value
+                  ? 'text-forest-700'
+                  : 'text-gray-500 hover:text-forest-600'
+                }`}
+            >
+              {type.label}
+              {activeTab === type.value && (
+                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-forest-600 rounded-t" />
+              )}
+            </button>
+          ))}
+        </div>
+      )}
 
       {isEditing ? (
         /* Edit/Create Form */
@@ -282,7 +314,7 @@ export default function AdminReportsPage() {
         </ChartCard>
       ) : (
         /* Reports List */
-        <ChartCard title="Danh sách nhận định" subtitle={`${reports.length} nhận định đã tạo`}>
+        <ChartCard title={`Danh sách ${activeTabLabel}`} subtitle={`${reports.length} báo cáo đã tạo`}>
           {isLoading ? (
             <div className="py-12 flex justify-center">
               <LoadingSpinner size="lg" />
@@ -292,12 +324,12 @@ export default function AdminReportsPage() {
           ) : reports.length === 0 ? (
             <div className="py-12 text-center">
               <FileText className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-              <p className="text-gray-500">Chưa có nhận định nào</p>
+              <p className="text-gray-500">Chưa có {activeTabLabel.toLowerCase()} nào</p>
               <button
                 onClick={handleNewReport}
                 className="mt-4 text-forest-600 hover:text-forest-800 font-medium text-sm"
               >
-                + Tạo nhận định đầu tiên
+                + Tạo báo cáo đầu tiên
               </button>
             </div>
           ) : (

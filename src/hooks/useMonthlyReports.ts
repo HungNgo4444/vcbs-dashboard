@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import type { MonthlyReport } from '@/types';
+import type { MonthlyReport, ReportType } from '@/types';
 
 interface UseMonthlyReportsOptions {
   month?: number | null;
   year?: number | null;
+  reportType?: ReportType | null;
   enabled?: boolean;
 }
 
@@ -25,10 +26,11 @@ interface CreateReportData {
   year: number;
   title: string;
   content: string;
+  report_type?: ReportType;
 }
 
 export function useMonthlyReports(options: UseMonthlyReportsOptions = {}): UseMonthlyReportsReturn {
-  const { month, year, enabled = true } = options;
+  const { month, year, reportType, enabled = true } = options;
   const [reports, setReports] = useState<MonthlyReport[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -43,6 +45,7 @@ export function useMonthlyReports(options: UseMonthlyReportsOptions = {}): UseMo
       const params = new URLSearchParams();
       if (month !== null && month !== undefined) params.set('month', month.toString());
       if (year !== null && year !== undefined) params.set('year', year.toString());
+      if (reportType) params.set('type', reportType);
 
       const url = `/api/reports${params.toString() ? `?${params.toString()}` : ''}`;
       const response = await fetch(url);
@@ -58,7 +61,7 @@ export function useMonthlyReports(options: UseMonthlyReportsOptions = {}): UseMo
     } finally {
       setIsLoading(false);
     }
-  }, [month, year, enabled]);
+  }, [month, year, reportType, enabled]);
 
   useEffect(() => {
     fetchReports();

@@ -59,7 +59,7 @@ export async function PUT(
 
     // Parse request body
     const body = await request.json();
-    const { month, year, title, content } = body;
+    const { month, year, title, content, report_type } = body;
 
     // Validate required fields
     if (!month || !year || !title || !content) {
@@ -69,32 +69,44 @@ export async function PUT(
       );
     }
 
-    // Check if another report for this month/year already exists (excluding current)
-    const { data: existing } = await supabase
+    // Check if another report for this month/year/type already exists (excluding current)
+    let existingQuery = supabase
       .from('monthly_reports')
       .select('id')
       .eq('month', month)
       .eq('year', year)
-      .neq('id', id)
-      .single();
+      .neq('id', id);
+
+    if (report_type) {
+      existingQuery = existingQuery.eq('report_type', report_type);
+    }
+
+    const { data: existing } = await existingQuery.single();
 
     if (existing) {
       return NextResponse.json(
-        { error: `Another report for ${month}/${year} already exists.` },
+        { error: `Another report for ${month}/${year} (${report_type || 'nhan_dinh'}) already exists.` },
         { status: 409 }
       );
+    }
+
+    // Build update object
+    const updateData: Record<string, unknown> = {
+      month,
+      year,
+      title,
+      content,
+      updated_at: new Date().toISOString(),
+    };
+
+    if (report_type) {
+      updateData.report_type = report_type;
     }
 
     // Update report
     const { data: report, error } = await supabase
       .from('monthly_reports')
-      .update({
-        month,
-        year,
-        title,
-        content,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updateData)
       .eq('id', id)
       .select()
       .single();

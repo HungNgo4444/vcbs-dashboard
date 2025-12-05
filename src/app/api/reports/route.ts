@@ -1,13 +1,14 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 
-// GET - Fetch reports (optional month/year query params)
+// GET - Fetch reports (optional month/year/type query params)
 export async function GET(request: Request) {
   try {
     const supabase = await createClient();
     const { searchParams } = new URL(request.url);
     const month = searchParams.get('month');
     const year = searchParams.get('year');
+    const type = searchParams.get('type');
 
     let query = supabase
       .from('monthly_reports')
@@ -20,6 +21,11 @@ export async function GET(request: Request) {
       query = query.eq('month', parseInt(month)).eq('year', parseInt(year));
     } else if (year) {
       query = query.eq('year', parseInt(year));
+    }
+
+    // Filter by report_type if provided
+    if (type) {
+      query = query.eq('report_type', type);
     }
 
     const { data: reports, error } = await query;
@@ -63,7 +69,7 @@ export async function POST(request: Request) {
 
     // Parse request body
     const body = await request.json();
-    const { month, year, title, content } = body;
+    const { month, year, title, content, report_type = 'nhan_dinh' } = body;
 
     // Validate required fields
     if (!month || !year || !title || !content) {
@@ -73,17 +79,18 @@ export async function POST(request: Request) {
       );
     }
 
-    // Check if report for this month/year already exists
+    // Check if report for this month/year/type already exists
     const { data: existing } = await supabase
       .from('monthly_reports')
       .select('id')
       .eq('month', month)
       .eq('year', year)
+      .eq('report_type', report_type)
       .single();
 
     if (existing) {
       return NextResponse.json(
-        { error: `Report for ${month}/${year} already exists. Use PUT to update.` },
+        { error: `Report for ${month}/${year} (${report_type}) already exists. Use PUT to update.` },
         { status: 409 }
       );
     }
@@ -96,6 +103,7 @@ export async function POST(request: Request) {
         year,
         title,
         content,
+        report_type,
         author_id: user.id,
       })
       .select()

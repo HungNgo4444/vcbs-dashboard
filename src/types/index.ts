@@ -65,12 +65,21 @@ export interface CategoryRanking {
   created_at: string;
 }
 
+// Report types
+export type ReportType = 'nhan_dinh' | 'bao_cao_nganh';
+
+export const REPORT_TYPES: { value: ReportType; label: string }[] = [
+  { value: 'nhan_dinh', label: 'Nhận định Báo cáo' },
+  { value: 'bao_cao_nganh', label: 'Báo cáo Ngành' },
+];
+
 export interface MonthlyReport {
   id: string;
   month: number;
   year: number;
   title: string;
   content: string;
+  report_type: ReportType;
   author_id: string | null;
   created_at: string;
   updated_at: string;
