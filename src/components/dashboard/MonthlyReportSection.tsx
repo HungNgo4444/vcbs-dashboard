@@ -6,11 +6,33 @@ import remarkGfm from 'remark-gfm';
 import { ChartCard } from './ChartCard';
 import { ReportTypeSidebar } from './ReportTypeSidebar';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
+import { MermaidBlock } from '@/components/shared/MermaidBlock';
 import { useMonthlyReports } from '@/hooks/useMonthlyReports';
 import { FileText, Edit2, Calendar } from 'lucide-react';
 import Link from 'next/link';
 import type { MonthlyReport, ReportType } from '@/types';
 import { REPORT_TYPES } from '@/types';
+
+// Custom components for ReactMarkdown to handle mermaid code blocks
+const markdownComponents = {
+  code: ({ className, children, ...props }: React.ComponentPropsWithoutRef<'code'> & { inline?: boolean }) => {
+    const match = /language-(\w+)/.exec(className || '');
+    const language = match ? match[1] : '';
+
+    // Check if this is a mermaid code block
+    if (language === 'mermaid') {
+      const chart = String(children).replace(/\n$/, '');
+      return <MermaidBlock chart={chart} />;
+    }
+
+    // For inline code or other code blocks, render normally
+    return (
+      <code className={className} {...props}>
+        {children}
+      </code>
+    );
+  },
+};
 
 interface MonthlyReportSectionProps {
   month: number | null;
@@ -118,7 +140,7 @@ export function MonthlyReportSection({ month, year, isAdmin }: MonthlyReportSect
                   prose-td:px-3 prose-td:py-2 prose-td:border prose-td:border-forest-200 prose-td:text-gray-700
                   prose-hr:border-forest-200
                 ">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
                     {report.content}
                   </ReactMarkdown>
                 </div>
