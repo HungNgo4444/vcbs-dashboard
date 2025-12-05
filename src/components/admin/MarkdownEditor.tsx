@@ -3,6 +3,7 @@
 import { useRef, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { MermaidBlock } from '@/components/shared/MermaidBlock';
 import {
   Bold,
   Italic,
@@ -12,6 +13,27 @@ import {
   List,
   ListOrdered,
 } from 'lucide-react';
+
+// Custom components for ReactMarkdown to handle mermaid code blocks
+const markdownComponents = {
+  code: ({ className, children, ...props }: React.ComponentPropsWithoutRef<'code'> & { inline?: boolean }) => {
+    const match = /language-(\w+)/.exec(className || '');
+    const language = match ? match[1] : '';
+
+    // Check if this is a mermaid code block
+    if (language === 'mermaid') {
+      const chart = String(children).replace(/\n$/, '');
+      return <MermaidBlock chart={chart} />;
+    }
+
+    // For inline code or other code blocks, render normally
+    return (
+      <code className={className} {...props}>
+        {children}
+      </code>
+    );
+  },
+};
 
 interface MarkdownEditorProps {
   value: string;
@@ -126,7 +148,7 @@ export function MarkdownEditor({ value, onChange, placeholder }: MarkdownEditorP
             prose-td:px-3 prose-td:py-2 prose-td:border prose-td:border-forest-200 prose-td:text-gray-700
             prose-hr:border-forest-200
           ">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+            <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
               {value || '*Chưa có nội dung*'}
             </ReactMarkdown>
           </div>
