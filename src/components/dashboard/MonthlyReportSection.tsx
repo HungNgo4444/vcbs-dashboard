@@ -70,22 +70,12 @@ export function MonthlyReportSection({ month, year, isAdmin }: MonthlyReportSect
   // Specific month/year view - show single report or empty state with sidebar
   if (isSpecificMonthYear) {
     return (
-      <ChartCard
-        title={title}
-        subtitle={subtitle}
-        centeredTitle
-        largeTitle
-        action={
-          isAdmin ? (
-            <Link
-              href="/admin/reports"
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-forest-800 font-semibold text-xs bg-forest-50 border border-forest-200 hover:bg-forest-100 transition-colors"
-            >
-              <Edit2 className="w-3.5 h-3.5" />
-              {report ? 'Chỉnh sửa' : 'Tạo mới'}
-            </Link>
-          ) : undefined
-        }
+      <div
+        className="bg-white rounded-2xl p-6 h-full"
+        style={{
+          boxShadow: '0 4px 24px rgba(27, 67, 50, 0.06)',
+          border: '1px solid #D8F3DC',
+        }}
       >
         <div className="flex gap-6">
           {/* Sidebar */}
@@ -98,6 +88,20 @@ export function MonthlyReportSection({ month, year, isAdmin }: MonthlyReportSect
           <div className="flex-1 min-w-0 flex justify-center">
             {report ? (
               <div className="max-w-4xl w-full">
+                {/* Title centered in content area */}
+                <div className="text-center mb-6">
+                  <h2 className="text-[28px] font-bold text-forest-800 m-0">{title}</h2>
+                  <p className="text-xs text-gray-500 mt-1.5">{subtitle}</p>
+                  {isAdmin && (
+                    <Link
+                      href="/admin/reports"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 mt-3 rounded-md text-forest-800 font-semibold text-xs bg-forest-50 border border-forest-200 hover:bg-forest-100 transition-colors"
+                    >
+                      <Edit2 className="w-3.5 h-3.5" />
+                      Chỉnh sửa
+                    </Link>
+                  )}
+                </div>
                 <div className="prose prose-sm max-w-none
                   prose-headings:text-forest-800 prose-headings:font-bold
                   prose-h1:text-xl prose-h1:border-b prose-h1:border-forest-200 prose-h1:pb-2 prose-h1:mb-4
@@ -129,22 +133,30 @@ export function MonthlyReportSection({ month, year, isAdmin }: MonthlyReportSect
                 </div>
               </div>
             ) : (
-              <div className="py-8 text-center">
-                <FileText className="w-10 h-10 mx-auto mb-3 text-gray-300" />
-                <p className="text-gray-500 text-sm">Chưa có {reportTypeLabel.toLowerCase()} cho {MONTH_NAMES[month - 1]} {year}</p>
-                {isAdmin && (
-                  <Link
-                    href="/admin/reports"
-                    className="inline-block mt-3 text-forest-600 hover:text-forest-800 font-medium text-sm"
-                  >
-                    + Tạo báo cáo
-                  </Link>
-                )}
+              <div className="w-full">
+                {/* Title centered in content area */}
+                <div className="text-center mb-6">
+                  <h2 className="text-[28px] font-bold text-forest-800 m-0">{title}</h2>
+                  <p className="text-xs text-gray-500 mt-1.5">{subtitle}</p>
+                  {isAdmin && (
+                    <Link
+                      href="/admin/reports"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 mt-3 rounded-md text-forest-800 font-semibold text-xs bg-forest-50 border border-forest-200 hover:bg-forest-100 transition-colors"
+                    >
+                      <Edit2 className="w-3.5 h-3.5" />
+                      Tạo mới
+                    </Link>
+                  )}
+                </div>
+                <div className="py-8 text-center">
+                  <FileText className="w-10 h-10 mx-auto mb-3 text-gray-300" />
+                  <p className="text-gray-500 text-sm">Chưa có {reportTypeLabel.toLowerCase()} cho {MONTH_NAMES[month - 1]} {year}</p>
+                </div>
               </div>
             )}
           </div>
         </div>
-      </ChartCard>
+      </div>
     );
   }
 
