@@ -123,10 +123,27 @@ export function MermaidBlock({ chart }: MermaidBlockProps) {
         }
 
         // Generate unique ID for this diagram
-        const id = `mermaid-${Math.random().toString(36).substr(2, 9)}`;
+        const id = `mermaid-${Math.random().toString(36).substring(2, 11)}`;
 
         // Render the chart
-        const { svg: renderedSvg } = await mermaid.render(id, chart.trim());
+        let { svg: renderedSvg } = await mermaid.render(id, chart.trim());
+
+        // Post-process SVG to fix dark backgrounds in pie charts
+        // The first rect in SVG is typically the background
+        renderedSvg = renderedSvg
+          // Replace background rect (first rect with full width/height)
+          .replace(
+            /(<rect[^>]*class="[^"]*"[^>]*)(fill="[^"]*")/,
+            '$1fill="#FFFFFF"'
+          )
+          // Also catch inline style backgrounds
+          .replace(
+            /style="[^"]*background-color:\s*[^;"]+[^"]*"/g,
+            'style="background-color: #FFFFFF"'
+          )
+          // Replace dark fills in general (colors starting with #2, #3, #4)
+          .replace(/fill="#[234][0-9a-fA-F]{5}"/g, 'fill="#FFFFFF"');
+
         setSvg(renderedSvg);
         setError(null);
       } catch (err) {
@@ -138,6 +155,27 @@ export function MermaidBlock({ chart }: MermaidBlockProps) {
 
     renderChart();
   }, [chart]);
+
+  // After SVG is rendered, fix background rect via DOM
+  useEffect(() => {
+    if (containerRef.current && svg) {
+      // Find all rect elements and check for dark backgrounds
+      const rects = containerRef.current.querySelectorAll('rect');
+      rects.forEach((rect, index) => {
+        const fill = rect.getAttribute('fill');
+        // First rect is usually background, or any rect with dark color
+        if (index === 0 || (fill && /^#[234][0-9a-fA-F]{5}$/i.test(fill))) {
+          rect.setAttribute('fill', '#FFFFFF');
+        }
+      });
+
+      // Also check SVG element itself for background style
+      const svgEl = containerRef.current.querySelector('svg');
+      if (svgEl) {
+        svgEl.style.backgroundColor = 'transparent';
+      }
+    }
+  }, [svg]);
 
   if (error) {
     return (
@@ -165,7 +203,7 @@ export function MermaidBlock({ chart }: MermaidBlockProps) {
   return (
     <div
       ref={containerRef}
-      className="my-4 flex justify-center overflow-x-auto"
+      className="my-4 flex justify-center overflow-x-auto bg-white rounded-lg p-4"
       dangerouslySetInnerHTML={{ __html: svg }}
     />
   );
