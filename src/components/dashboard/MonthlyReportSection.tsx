@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, useRef } from 'react';
+import { useMemo, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { ChartCard } from './ChartCard';
@@ -49,8 +49,7 @@ const MONTH_NAMES = [
 export function MonthlyReportSection({ month, year, isAdmin }: MonthlyReportSectionProps) {
   const [selectedReportType, setSelectedReportType] = useState<ReportType>('nhan_dinh');
   const isSpecificMonthYear = month !== null && year !== null;
-  const reportContentRef = useRef<HTMLDivElement>(null);
-  const { exportToPDF, isExporting } = useExportPDF();
+  const { exportToPDF, isExporting, exportingId } = useExportPDF();
 
   const { report, reports, isLoading, error } = useMonthlyReports({
     month: isSpecificMonthYear ? month : undefined,
@@ -120,14 +119,12 @@ export function MonthlyReportSection({ month, year, isAdmin }: MonthlyReportSect
                   <div className="flex items-center justify-center gap-2 mt-3">
                     {/* Export PDF - hiển thị cho tất cả users */}
                     <button
-                      onClick={() => exportToPDF(reportContentRef, {
-                        filename: `${report.title.replace(/\s+/g, '_')}_${report.month}_${report.year}.pdf`,
-                      })}
-                      disabled={isExporting}
+                      onClick={() => exportToPDF(report.id)}
+                      disabled={isExporting && exportingId === report.id}
                       className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-forest-800 font-semibold text-xs bg-forest-50 border border-forest-200 hover:bg-forest-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Download className="w-3.5 h-3.5" />
-                      {isExporting ? 'Đang xuất...' : 'Xuất PDF'}
+                      {isExporting && exportingId === report.id ? 'Đang xuất...' : 'Xuất PDF'}
                     </button>
                     {/* Chỉnh sửa - chỉ hiển thị cho admin */}
                     {isAdmin && (
@@ -141,8 +138,8 @@ export function MonthlyReportSection({ month, year, isAdmin }: MonthlyReportSect
                     )}
                   </div>
                 </div>
-                {/* Content to export as PDF */}
-                <div ref={reportContentRef} className="bg-white p-6">
+                {/* Content display */}
+                <div className="bg-white p-6">
                   <div className="text-center mb-4">
                     <h1 className="text-2xl font-bold text-forest-800">{report.title}</h1>
                     <p className="text-sm text-gray-500">{MONTH_NAMES[report.month - 1]} {report.year}</p>
@@ -248,7 +245,12 @@ export function MonthlyReportSection({ month, year, isAdmin }: MonthlyReportSect
           ) : (
             <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
               {reports.map((r) => (
-                <ReportListItem key={r.id} report={r} />
+                <ReportListItem
+                  key={r.id}
+                  report={r}
+                  onExport={exportToPDF}
+                  isExporting={isExporting && exportingId === r.id}
+                />
               ))}
             </div>
           )}
@@ -258,7 +260,13 @@ export function MonthlyReportSection({ month, year, isAdmin }: MonthlyReportSect
   );
 }
 
-function ReportListItem({ report }: { report: MonthlyReport }) {
+interface ReportListItemProps {
+  report: MonthlyReport;
+  onExport: (id: string) => void;
+  isExporting: boolean;
+}
+
+function ReportListItem({ report, onExport, isExporting }: ReportListItemProps) {
   return (
     <div className="p-4 bg-forest-50/50 rounded-xl border border-forest-100 hover:bg-forest-50 transition-colors">
       <div className="flex items-start gap-3">
@@ -276,6 +284,22 @@ function ReportListItem({ report }: { report: MonthlyReport }) {
             {report.content.substring(0, 150)}...
           </p>
         </div>
+        {/* Export button for list view */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onExport(report.id);
+          }}
+          disabled={isExporting}
+          className="flex-shrink-0 p-2 rounded-lg text-forest-600 hover:bg-forest-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          title="Xuất PDF"
+        >
+          {isExporting ? (
+            <LoadingSpinner size="sm" />
+          ) : (
+            <Download className="w-4 h-4" />
+          )}
+        </button>
       </div>
     </div>
   );
