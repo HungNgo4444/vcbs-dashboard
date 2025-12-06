@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { ChartCard } from './ChartCard';
@@ -8,7 +8,8 @@ import { ReportTypeSidebar } from './ReportTypeSidebar';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import { MermaidBlock } from '@/components/shared/MermaidBlock';
 import { useMonthlyReports } from '@/hooks/useMonthlyReports';
-import { FileText, Edit2, Calendar } from 'lucide-react';
+import { useExportPDF } from '@/hooks/useExportPDF';
+import { FileText, Edit2, Calendar, Download } from 'lucide-react';
 import Link from 'next/link';
 import type { MonthlyReport, ReportType } from '@/types';
 import { REPORT_TYPES } from '@/types';
@@ -48,6 +49,8 @@ const MONTH_NAMES = [
 export function MonthlyReportSection({ month, year, isAdmin }: MonthlyReportSectionProps) {
   const [selectedReportType, setSelectedReportType] = useState<ReportType>('nhan_dinh');
   const isSpecificMonthYear = month !== null && year !== null;
+  const reportContentRef = useRef<HTMLDivElement>(null);
+  const { exportToPDF, isExporting } = useExportPDF();
 
   const { report, reports, isLoading, error } = useMonthlyReports({
     month: isSpecificMonthYear ? month : undefined,
@@ -114,35 +117,56 @@ export function MonthlyReportSection({ month, year, isAdmin }: MonthlyReportSect
                 <div className="text-center mb-6">
                   <h2 className="text-[28px] font-bold text-forest-800 m-0">{title}</h2>
                   <p className="text-xs text-gray-500 mt-1.5">{subtitle}</p>
-                  {isAdmin && (
-                    <Link
-                      href="/admin/reports"
-                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 mt-3 rounded-md text-forest-800 font-semibold text-xs bg-forest-50 border border-forest-200 hover:bg-forest-100 transition-colors"
+                  <div className="flex items-center justify-center gap-2 mt-3">
+                    {/* Export PDF - hiển thị cho tất cả users */}
+                    <button
+                      onClick={() => exportToPDF(reportContentRef, {
+                        filename: `${report.title.replace(/\s+/g, '_')}_${report.month}_${report.year}.pdf`,
+                      })}
+                      disabled={isExporting}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-forest-800 font-semibold text-xs bg-forest-50 border border-forest-200 hover:bg-forest-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <Edit2 className="w-3.5 h-3.5" />
-                      Chỉnh sửa
-                    </Link>
-                  )}
+                      <Download className="w-3.5 h-3.5" />
+                      {isExporting ? 'Đang xuất...' : 'Xuất PDF'}
+                    </button>
+                    {/* Chỉnh sửa - chỉ hiển thị cho admin */}
+                    {isAdmin && (
+                      <Link
+                        href="/admin/reports"
+                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-forest-800 font-semibold text-xs bg-forest-50 border border-forest-200 hover:bg-forest-100 transition-colors"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                        Chỉnh sửa
+                      </Link>
+                    )}
+                  </div>
                 </div>
-                <div className="prose prose-sm max-w-none
-                  prose-headings:text-forest-800 prose-headings:font-bold
-                  prose-h1:text-xl prose-h1:border-b prose-h1:border-forest-200 prose-h1:pb-2 prose-h1:mb-4
-                  prose-h2:text-lg prose-h2:mt-6 prose-h2:mb-3
-                  prose-h3:text-base prose-h3:mt-4 prose-h3:mb-2
-                  prose-p:text-gray-700 prose-p:leading-relaxed
-                  prose-a:text-forest-600 prose-a:no-underline hover:prose-a:underline
-                  prose-strong:text-forest-800 prose-strong:font-semibold
-                  prose-ul:my-2 prose-ol:my-2
-                  prose-li:text-gray-700 prose-li:my-1
-                  prose-blockquote:border-l-4 prose-blockquote:border-forest-400 prose-blockquote:bg-forest-50 prose-blockquote:py-2 prose-blockquote:px-4 prose-blockquote:not-italic prose-blockquote:text-forest-800
-                  prose-table:border-collapse prose-table:w-full prose-table:my-4
-                  prose-th:bg-forest-100 prose-th:text-forest-800 prose-th:font-semibold prose-th:text-left prose-th:px-3 prose-th:py-2 prose-th:border prose-th:border-forest-200
-                  prose-td:px-3 prose-td:py-2 prose-td:border prose-td:border-forest-200 prose-td:text-gray-700
-                  prose-hr:border-forest-200
-                ">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-                    {report.content}
-                  </ReactMarkdown>
+                {/* Content to export as PDF */}
+                <div ref={reportContentRef} className="bg-white p-6">
+                  <div className="text-center mb-4">
+                    <h1 className="text-2xl font-bold text-forest-800">{report.title}</h1>
+                    <p className="text-sm text-gray-500">{MONTH_NAMES[report.month - 1]} {report.year}</p>
+                  </div>
+                  <div className="prose prose-sm max-w-none
+                    prose-headings:text-forest-800 prose-headings:font-bold
+                    prose-h1:text-xl prose-h1:border-b prose-h1:border-forest-200 prose-h1:pb-2 prose-h1:mb-4
+                    prose-h2:text-lg prose-h2:mt-6 prose-h2:mb-3
+                    prose-h3:text-base prose-h3:mt-4 prose-h3:mb-2
+                    prose-p:text-gray-700 prose-p:leading-relaxed
+                    prose-a:text-forest-600 prose-a:no-underline hover:prose-a:underline
+                    prose-strong:text-forest-800 prose-strong:font-semibold
+                    prose-ul:my-2 prose-ol:my-2
+                    prose-li:text-gray-700 prose-li:my-1
+                    prose-blockquote:border-l-4 prose-blockquote:border-forest-400 prose-blockquote:bg-forest-50 prose-blockquote:py-2 prose-blockquote:px-4 prose-blockquote:not-italic prose-blockquote:text-forest-800
+                    prose-table:border-collapse prose-table:w-full prose-table:my-4
+                    prose-th:bg-forest-100 prose-th:text-forest-800 prose-th:font-semibold prose-th:text-left prose-th:px-3 prose-th:py-2 prose-th:border prose-th:border-forest-200
+                    prose-td:px-3 prose-td:py-2 prose-td:border prose-td:border-forest-200 prose-td:text-gray-700
+                    prose-hr:border-forest-200
+                  ">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                      {report.content}
+                    </ReactMarkdown>
+                  </div>
                 </div>
                 <div className="mt-6 pt-4 border-t border-forest-100 text-xs text-gray-500 flex items-center gap-4">
                   <span>Cập nhật: {new Date(report.updated_at).toLocaleDateString('vi-VN', {
