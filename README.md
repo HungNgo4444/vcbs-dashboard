@@ -2,8 +2,6 @@
 
 Dashboard phân tích Media Monitoring cho VCBS (Vietcombank Securities), xây dựng trên Next.js 14 + Supabase.
 
-![Dashboard Preview](image/README/1765012124467.png)
-
 ## Demo
 
 Truy cập demo tại: **https://vcbs-dashboard.vercel.app**
@@ -12,6 +10,8 @@ Truy cập demo tại: **https://vcbs-dashboard.vercel.app**
 |-------|-------|
 | Email | `user@test.com` |
 | Password | `test123456@` |
+
+![Dashboard Preview](image/README/1765012124467.png)
 
 ## Tech Stack
 
