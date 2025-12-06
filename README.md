@@ -4,6 +4,15 @@ Dashboard phân tích Media Monitoring cho VCBS (Vietcombank Securities), xây d
 
 ![Dashboard Preview](image/README/1765012124467.png)
 
+## Demo
+
+Truy cập demo tại: **https://vcbs-dashboard.vercel.app**
+
+| Field | Value |
+|-------|-------|
+| Email | `user@test.com` |
+| Password | `test123456@` |
+
 ## Tech Stack
 
 | Layer | Technology |
