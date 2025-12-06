@@ -138,8 +138,8 @@ export function MonthlyReportSection({ month, year, isAdmin }: MonthlyReportSect
                     )}
                   </div>
                 </div>
-                {/* Content display */}
-                <div className="bg-white p-6">
+                {/* Content display - data-report-id for browser print fallback */}
+                <div data-report-id={report.id} className="bg-white p-6">
                   <div className="text-center mb-4">
                     <h1 className="text-2xl font-bold text-forest-800">{report.title}</h1>
                     <p className="text-sm text-gray-500">{MONTH_NAMES[report.month - 1]} {report.year}</p>
