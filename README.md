@@ -1,36 +1,249 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# VCBS Dashboard
 
-## Getting Started
+Dashboard phân tích Media Monitoring cho VCBS (Vietcombank Securities), xây dựng trên Next.js 14 + Supabase.
 
-First, run the development server:
+![Dashboard Preview](image/README/1765012124467.png)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| Framework | Next.js 14 (App Router) |
+| Language | TypeScript |
+| Styling | Tailwind CSS + Radix UI |
+| Database | Supabase (PostgreSQL) |
+| Charts | Recharts |
+| Markdown | ReactMarkdown + Mermaid |
+| PDF Export | Puppeteer (server) + Browser Print (fallback) |
+| Authentication | Supabase Auth |
+| Deployment | Vercel |
+
+## Tính năng chính
+
+### 1. Dashboard Analytics
+- **Metric Cards**: Tổng đề cập, tương tác, tích cực/tiêu cực, NSR Score
+- **Share of Voice Chart**: Line chart theo dõi xu hướng đề cập/tương tác theo kênh
+- **Channel Distribution**: Donut chart phân bổ theo kênh (Báo mạng, Facebook, Youtube, Tiktok)
+- **Content Type Chart**: Stacked bar chart phân loại nội dung
+- **Category Chart**: Bar chart xếp hạng categories với rank change
+- **Articles Table**: Danh sách bài viết chi tiết với pagination
+
+### 2. Cross-Filter (Power BI-like)
+- Click vào chart để filter dữ liệu liên quan
+- Filter theo: Ngày, Kênh, Category, Loại nội dung
+- Tự động cập nhật Articles Table theo filter
+
+### 3. Filter System
+- Multi-select filter: Channels, Sentiments, Content Types, Categories
+- Month/Year picker với "Toàn thời gian" option
+- Apply/Reset filters
+
+### 4. Monthly Reports
+- Hỗ trợ 2 loại: Nhận định Báo cáo, Báo cáo Ngành
+- Markdown editor với preview (Admin)
+- Mermaid diagram support (pie, flowchart, etc.)
+- Export PDF với fallback browser print
+
+### 5. Admin Features
+- Upload Excel data (parse & import mentions)
+- Upload history management
+- Report CRUD (Create, Read, Update, Delete)
+- Role-based access control (admin/user)
+
+## Cấu trúc thư mục
+
+```
+src/
+├── app/                          # Next.js App Router
+│   ├── (auth)/                   # Auth routes group
+│   │   ├── layout.tsx            # Auth layout (no header/footer)
+│   │   └── login/page.tsx        # Login page
+│   ├── (dashboard)/              # Dashboard routes group
+│   │   ├── layout.tsx            # Dashboard layout (header/footer)
+│   │   ├── dashboard/page.tsx    # Main dashboard page
+│   │   └── admin/                # Admin pages
+│   │       ├── upload/page.tsx   # Upload data page
+│   │       ├── history/page.tsx  # Upload history page
+│   │       └── reports/page.tsx  # Report management page
+│   ├── api/                      # API Routes
+│   │   ├── data/route.ts         # Dashboard data API
+│   │   ├── upload/               # Upload API
+│   │   │   ├── route.ts          # Upload handler
+│   │   │   ├── [id]/route.ts     # Delete upload
+│   │   │   └── history/route.ts  # Upload history
+│   │   ├── reports/              # Reports API
+│   │   │   ├── route.ts          # List/Create reports
+│   │   │   └── [id]/route.ts     # Get/Update/Delete report
+│   │   └── export-pdf/           # PDF Export API
+│   │       └── [id]/route.ts     # Generate PDF with Puppeteer
+│   ├── layout.tsx                # Root layout
+│   ├── page.tsx                  # Root redirect to /dashboard
+│   └── globals.css               # Global styles
+│
+├── components/
+│   ├── admin/                    # Admin-only components
+│   │   ├── AdminBar.tsx          # Admin toolbar (upload button)
+│   │   └── MarkdownEditor.tsx    # Markdown editor with preview
+│   ├── dashboard/                # Dashboard components
+│   │   ├── ArticlesTable.tsx     # Articles data table
+│   │   ├── CategoryBarChart.tsx  # Category ranking chart
+│   │   ├── ChannelDonutChart.tsx # Channel distribution chart
+│   │   ├── ChartCard.tsx         # Chart wrapper component
+│   │   ├── ContentTypeStackChart.tsx
+│   │   ├── DashboardFooter.tsx
+│   │   ├── DashboardHeader.tsx
+│   │   ├── FilterBar.tsx         # Filter controls
+│   │   ├── MetricCard.tsx        # KPI metric card
+│   │   ├── MonthlyReportSection.tsx # Report display/list
+│   │   ├── MonthPicker.tsx       # Month/Year selector
+│   │   ├── MultiSelectFilter.tsx # Multi-select dropdown
+│   │   ├── ReportTypeSidebar.tsx # Report type tabs
+│   │   └── SOVLineChart.tsx      # Share of Voice line chart
+│   ├── shared/                   # Shared components
+│   │   ├── ChannelBadge.tsx      # Channel indicator badge
+│   │   ├── LoadingSpinner.tsx    # Loading indicator
+│   │   ├── MermaidBlock.tsx      # Mermaid diagram renderer
+│   │   ├── RankChange.tsx        # Rank change indicator
+│   │   └── SentimentBadge.tsx    # Sentiment indicator
+│   └── ui/                       # UI primitives (shadcn/ui)
+│       ├── button.tsx
+│       ├── card.tsx
+│       ├── input.tsx
+│       ├── label.tsx
+│       ├── select.tsx
+│       ├── table.tsx
+│       └── badge.tsx
+│
+├── hooks/                        # Custom React hooks
+│   ├── useAuth.ts                # Auth state & role checking
+│   ├── useDashboardData.ts       # Dashboard data fetching
+│   ├── useExportPDF.ts           # PDF export logic
+│   ├── useFilters.ts             # Filter state management
+│   └── useMonthlyReports.ts      # Report data fetching
+│
+├── lib/
+│   ├── constants.ts              # App constants
+│   ├── utils.ts                  # Utility functions (cn, etc.)
+│   ├── supabase/                 # Supabase clients
+│   │   ├── client.ts             # Browser client
+│   │   ├── server.ts             # Server client
+│   │   └── middleware.ts         # Auth middleware helpers
+│   └── utils/
+│       └── excel-parser.ts       # Excel file parser
+│
+├── styles/
+│   └── theme.ts                  # Theme colors (forest palette)
+│
+├── types/
+│   └── index.ts                  # TypeScript type definitions
+│
+└── middleware.ts                 # Next.js middleware (auth protection)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Database Schema (Supabase)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Tables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Table | Description |
+|-------|-------------|
+| `profiles` | User profiles với role (admin/user) |
+| `mentions` | Media mentions data |
+| `brands` | Brand configuration |
+| `upload_history` | Upload batch tracking |
+| `category_rankings` | Category rank history |
+| `monthly_reports` | Monthly analysis reports |
 
-## Learn More
+### Key Types
 
-To learn more about Next.js, take a look at the following resources:
+```typescript
+// Report types
+type ReportType = 'nhan_dinh' | 'bao_cao_nganh';
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+// Channel types
+type Channel = 'Báo mạng' | 'Facebook' | 'Youtube' | 'Tiktok';
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+// Sentiment types
+type Sentiment = 'Tích cực' | 'Tiêu cực' | 'Trung tính';
 
-## Deploy on Vercel
+// Content types
+type ContentType =
+  | 'Tin tức thị trường'
+  | 'Bán hàng/Môi giới'
+  | 'Tin trực tiếp về thương hiệu';
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+// Category types (14 categories)
+type Category = 'Cổ phiếu' | 'Trái phiếu' | 'Chứng chỉ quỹ' | ...
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Environment Variables
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJxxx...
+```
+
+## Cài đặt & Chạy
+
+```bash
+# Install dependencies
+npm install
+
+# Run development server
+npm run dev
+
+# Build for production
+npm run build
+
+# Start production server
+npm start
+```
+
+## API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/data` | Dashboard data với filters |
+| POST | `/api/upload` | Upload Excel file |
+| GET | `/api/upload/history` | Upload history list |
+| DELETE | `/api/upload/[id]` | Delete upload batch |
+| GET | `/api/reports` | List reports |
+| POST | `/api/reports` | Create report |
+| GET | `/api/reports/[id]` | Get report detail |
+| PUT | `/api/reports/[id]` | Update report |
+| DELETE | `/api/reports/[id]` | Delete report |
+| GET | `/api/export-pdf/[id]` | Export report to PDF |
+
+## PDF Export
+
+Hệ thống export PDF có 2 mode:
+
+1. **Server-side (Puppeteer)**: Render HTML -> PDF với `@sparticuz/chromium`
+   - Ưu điểm: Text selectable, links clickable
+   - Hạn chế: Cần Chromium binary, không hoạt động trên Vercel serverless
+
+2. **Browser Print (Fallback)**: Mở popup với styled HTML -> Print dialog
+   - Tự động fallback khi server PDF fail
+   - Hoạt động trên mọi environment
+
+## Deployment
+
+### Vercel
+
+```bash
+# Deploy via Vercel CLI
+vercel deploy
+
+# Or connect GitHub repo to Vercel
+```
+
+### Self-hosted (với Puppeteer)
+
+Để enable server-side PDF:
+
+1. Sử dụng `@sparticuz/chromium-min`
+2. Host Chromium binary trên S3/CDN
+3. Update `chromium.executablePath(url)`
+
+## License
+
+Private - VCBS Internal Use Only
