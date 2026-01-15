@@ -33,6 +33,7 @@ export const ALLOWED_CATEGORIES = [
   'Phí & Ưu đãi',
   'Tư vấn Doanh nghiệp',
   'Blockchain & Tài sản mã hóa',
+  'Khác',
 ] as const;
 
 // Excel Column → Database Column Mapping
