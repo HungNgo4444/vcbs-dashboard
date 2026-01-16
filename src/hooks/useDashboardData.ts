@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import type {
   DashboardFilters,
   MetricsSummary,
@@ -14,6 +15,68 @@ import { format, parseISO, startOfMonth, endOfMonth, subMonths } from 'date-fns'
 
 // Timeout for fetch requests (30 seconds)
 const FETCH_TIMEOUT = 30000;
+
+// Batch size for pagination (Supabase default limit is 1000)
+const BATCH_SIZE = 1000;
+
+// Helper to fetch all rows with pagination loop (bypasses Supabase 1000 row limit)
+async function fetchAllWithPagination<T>(
+  supabase: SupabaseClient,
+  table: string,
+  columns: string,
+  filters: {
+    channels?: string[];
+    sentiments?: string[];
+    contentTypes?: string[];
+    categories?: string[];
+    startDate?: string;
+    endDate?: string;
+  }
+): Promise<T[]> {
+  let allData: T[] = [];
+  let from = 0;
+  let hasMore = true;
+
+  while (hasMore) {
+    let query = supabase.from(table).select(columns);
+
+    // Apply filters
+    if (filters.channels && filters.channels.length > 0) {
+      query = query.in('channel', filters.channels);
+    }
+    if (filters.sentiments && filters.sentiments.length > 0) {
+      query = query.in('sentiment', filters.sentiments);
+    }
+    if (filters.contentTypes && filters.contentTypes.length > 0) {
+      query = query.in('content_type', filters.contentTypes);
+    }
+    if (filters.categories && filters.categories.length > 0) {
+      query = query.in('category', filters.categories);
+    }
+    if (filters.startDate) {
+      query = query.gte('published_date', filters.startDate);
+    }
+    if (filters.endDate) {
+      query = query.lte('published_date', filters.endDate);
+    }
+
+    // Apply pagination
+    query = query.range(from, from + BATCH_SIZE - 1);
+
+    const { data: batch, error } = await query;
+    if (error) throw error;
+
+    if (batch && batch.length > 0) {
+      allData = allData.concat(batch as T[]);
+      from += BATCH_SIZE;
+      hasMore = batch.length === BATCH_SIZE;
+    } else {
+      hasMore = false;
+    }
+  }
+
+  return allData;
+}
 
 // Engagement SOV type for toggle feature
 export interface EngagementSOVDataPoint {
@@ -94,47 +157,39 @@ export function useDashboardData(filters: DashboardFilters, enabled: boolean = t
     };
 
     try {
-      // Build base query with filters
-      let baseQuery = supabase.from('mentions').select('*', { count: 'exact' });
+      // Build date filters
+      let startDate: string | undefined;
+      let endDate: string | undefined;
 
-      // Apply array filters using .in() for multiple values
-      if (filters.channels.length > 0) {
-        baseQuery = baseQuery.in('channel', filters.channels);
-      }
-      if (filters.sentiments.length > 0) {
-        baseQuery = baseQuery.in('sentiment', filters.sentiments);
-      }
-      if (filters.contentTypes.length > 0) {
-        baseQuery = baseQuery.in('content_type', filters.contentTypes);
-      }
-      if (filters.categories.length > 0) {
-        baseQuery = baseQuery.in('category', filters.categories);
-      }
-
-      // Month/Year filter
       if (filters.year !== null && filters.month !== null) {
         const filterDate = new Date(filters.year, filters.month - 1, 1);
-        const startDate = format(startOfMonth(filterDate), 'yyyy-MM-dd');
-        const endDate = format(endOfMonth(filterDate), 'yyyy-MM-dd');
-        baseQuery = baseQuery.gte('published_date', startDate).lte('published_date', endDate);
+        startDate = format(startOfMonth(filterDate), 'yyyy-MM-dd');
+        endDate = format(endOfMonth(filterDate), 'yyyy-MM-dd');
       } else if (filters.year !== null) {
-        const startDate = `${filters.year}-01-01`;
-        const endDate = `${filters.year}-12-31`;
-        baseQuery = baseQuery.gte('published_date', startDate).lte('published_date', endDate);
+        startDate = `${filters.year}-01-01`;
+        endDate = `${filters.year}-12-31`;
       }
 
-      // Fetch current period data with timeout
-      const { data: allMentions, error: mentionsError, count } = await withTimeout(baseQuery);
+      // Fetch ALL mentions with pagination loop (bypasses 1000 row limit)
+      const mentions = await withTimeout(
+        fetchAllWithPagination<Mention>(supabase, 'mentions', '*', {
+          channels: filters.channels.length > 0 ? filters.channels : undefined,
+          sentiments: filters.sentiments.length > 0 ? filters.sentiments : undefined,
+          contentTypes: filters.contentTypes.length > 0 ? filters.contentTypes : undefined,
+          categories: filters.categories.length > 0 ? filters.categories : undefined,
+          startDate,
+          endDate,
+        })
+      );
 
-      if (mentionsError) throw mentionsError;
+      const totalArticles = mentions.length;
 
-      const mentions = allMentions || [];
-      const totalArticles = count || 0;
-
-      // Fetch all data for available years (without filters)
-      const { data: allData } = await supabase.from('mentions').select('published_date');
+      // Fetch all data for available years (without filters) - with pagination
+      const allYearData = await fetchAllWithPagination<{ published_date: string }>(
+        supabase, 'mentions', 'published_date', {}
+      );
       const yearsSet = new Set<number>();
-      (allData || []).forEach((m) => {
+      allYearData.forEach((m) => {
         const year = new Date(m.published_date).getFullYear();
         if (!isNaN(year)) yearsSet.add(year);
       });
@@ -169,26 +224,19 @@ export function useDashboardData(filters: DashboardFilters, enabled: boolean = t
         const prevStartDate = format(startOfMonth(prevDate), 'yyyy-MM-dd');
         const prevEndDate = format(endOfMonth(prevDate), 'yyyy-MM-dd');
 
-        let prevQuery = supabase.from('mentions').select('*');
-        prevQuery = prevQuery.gte('published_date', prevStartDate).lte('published_date', prevEndDate);
+        // Fetch previous month data with pagination
+        const prevMentions = await fetchAllWithPagination<Mention>(
+          supabase, 'mentions', '*', {
+            channels: filters.channels.length > 0 ? filters.channels : undefined,
+            sentiments: filters.sentiments.length > 0 ? filters.sentiments : undefined,
+            contentTypes: filters.contentTypes.length > 0 ? filters.contentTypes : undefined,
+            categories: filters.categories.length > 0 ? filters.categories : undefined,
+            startDate: prevStartDate,
+            endDate: prevEndDate,
+          }
+        );
 
-        // Apply same filters
-        if (filters.channels.length > 0) {
-          prevQuery = prevQuery.in('channel', filters.channels);
-        }
-        if (filters.sentiments.length > 0) {
-          prevQuery = prevQuery.in('sentiment', filters.sentiments);
-        }
-        if (filters.contentTypes.length > 0) {
-          prevQuery = prevQuery.in('content_type', filters.contentTypes);
-        }
-        if (filters.categories.length > 0) {
-          prevQuery = prevQuery.in('category', filters.categories);
-        }
-
-        const { data: prevMentions } = await prevQuery;
-
-        if (prevMentions && prevMentions.length > 0) {
+        if (prevMentions.length > 0) {
           const prevTotal = prevMentions.length;
           const prevEngagement = prevMentions.reduce((sum, m) => sum + (m.engagement || 0), 0);
           const prevPositive = prevMentions.filter((m) => m.sentiment === 'Tích cực').length;
@@ -317,29 +365,22 @@ export function useDashboardData(filters: DashboardFilters, enabled: boolean = t
       const prevCategoryRanks = new Map<string, number>();
       if (filters.year !== null && filters.month !== null) {
         const prevDate = subMonths(new Date(filters.year, filters.month - 1, 1), 1);
-        const prevStartDate = format(startOfMonth(prevDate), 'yyyy-MM-dd');
-        const prevEndDate = format(endOfMonth(prevDate), 'yyyy-MM-dd');
+        const prevCatStartDate = format(startOfMonth(prevDate), 'yyyy-MM-dd');
+        const prevCatEndDate = format(endOfMonth(prevDate), 'yyyy-MM-dd');
 
-        let prevCatQuery = supabase.from('mentions').select('category');
-        prevCatQuery = prevCatQuery.gte('published_date', prevStartDate).lte('published_date', prevEndDate);
+        // Fetch previous month categories with pagination
+        const prevCatMentions = await fetchAllWithPagination<{ category: string }>(
+          supabase, 'mentions', 'category', {
+            channels: filters.channels.length > 0 ? filters.channels : undefined,
+            sentiments: filters.sentiments.length > 0 ? filters.sentiments : undefined,
+            contentTypes: filters.contentTypes.length > 0 ? filters.contentTypes : undefined,
+            categories: filters.categories.length > 0 ? filters.categories : undefined,
+            startDate: prevCatStartDate,
+            endDate: prevCatEndDate,
+          }
+        );
 
-        // Apply same filters
-        if (filters.channels.length > 0) {
-          prevCatQuery = prevCatQuery.in('channel', filters.channels);
-        }
-        if (filters.sentiments.length > 0) {
-          prevCatQuery = prevCatQuery.in('sentiment', filters.sentiments);
-        }
-        if (filters.contentTypes.length > 0) {
-          prevCatQuery = prevCatQuery.in('content_type', filters.contentTypes);
-        }
-        if (filters.categories.length > 0) {
-          prevCatQuery = prevCatQuery.in('category', filters.categories);
-        }
-
-        const { data: prevCatMentions } = await prevCatQuery;
-
-        if (prevCatMentions && prevCatMentions.length > 0) {
+        if (prevCatMentions.length > 0) {
           const prevCatMap = new Map<string, number>();
           prevCatMentions.forEach((m) => {
             prevCatMap.set(m.category, (prevCatMap.get(m.category) || 0) + 1);
