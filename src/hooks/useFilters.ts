@@ -8,6 +8,7 @@ const defaultFilters: DashboardFilters = {
   sentiments: [],
   contentTypes: [],
   categories: [],
+  tiers: [],
   month: null,
   year: null,
 };

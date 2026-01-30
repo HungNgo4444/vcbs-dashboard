@@ -248,8 +248,6 @@ export function MonthlyReportSection({ month, year, isAdmin }: MonthlyReportSect
                 <ReportListItem
                   key={r.id}
                   report={r}
-                  onExport={exportToPDF}
-                  isExporting={isExporting && exportingId === r.id}
                 />
               ))}
             </div>
@@ -262,11 +260,9 @@ export function MonthlyReportSection({ month, year, isAdmin }: MonthlyReportSect
 
 interface ReportListItemProps {
   report: MonthlyReport;
-  onExport: (id: string) => void;
-  isExporting: boolean;
 }
 
-function ReportListItem({ report, onExport, isExporting }: ReportListItemProps) {
+function ReportListItem({ report }: ReportListItemProps) {
   return (
     <div className="p-4 bg-forest-50/50 rounded-xl border border-forest-100 hover:bg-forest-50 transition-colors">
       <div className="flex items-start gap-3">
@@ -284,22 +280,6 @@ function ReportListItem({ report, onExport, isExporting }: ReportListItemProps) 
             {report.content.substring(0, 150)}...
           </p>
         </div>
-        {/* Export button for list view */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onExport(report.id);
-          }}
-          disabled={isExporting}
-          className="flex-shrink-0 p-2 rounded-lg text-forest-600 hover:bg-forest-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          title="Xuất PDF"
-        >
-          {isExporting ? (
-            <LoadingSpinner size="sm" />
-          ) : (
-            <Download className="w-4 h-4" />
-          )}
-        </button>
       </div>
     </div>
   );

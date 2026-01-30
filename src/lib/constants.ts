@@ -36,6 +36,12 @@ export const ALLOWED_CATEGORIES = [
   'Khác',
 ] as const;
 
+export const ALLOWED_TIERS = [
+  'Tier 1',
+  'Tier 2',
+  'Tier 3',
+] as const;
+
 // Excel Column → Database Column Mapping
 export const EXCEL_TO_DB_MAPPING: Record<string, string> = {
   'Khách hàng': 'brand',
@@ -57,6 +63,7 @@ export const EXCEL_TO_DB_MAPPING: Record<string, string> = {
   'AI_THELOAINOIDUNG': 'content_type',
   'AI_SACTHAI': 'sentiment',
   'AI_NOTE': 'ai_summary',
+  'Tier': 'tier',
 };
 
 // Chart colors - Updated: Facebook=blue, Tiktok=teal, Youtube=red

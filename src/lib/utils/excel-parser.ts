@@ -169,6 +169,7 @@ function transformRow(row: ExcelRow, rowNumber: number): ParsedMention | null {
     content_type: row['AI_THELOAINOIDUNG'],
     sentiment: row['AI_SACTHAI'],
     ai_summary: row['AI_NOTE'] || null,
+    tier: row['Tier'] || null,
   };
 }
 

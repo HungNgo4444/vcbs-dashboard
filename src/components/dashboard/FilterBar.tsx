@@ -6,6 +6,7 @@ import {
   ALLOWED_SENTIMENTS,
   ALLOWED_CONTENT_TYPES,
   ALLOWED_CATEGORIES,
+  ALLOWED_TIERS,
 } from '@/lib/constants';
 import { MonthPicker } from './MonthPicker';
 import { MultiSelectFilter } from './MultiSelectFilter';
@@ -54,6 +55,12 @@ export function FilterBar({ filters, onFiltersChange, onApply, onReset, availabl
         options={ALLOWED_CATEGORIES}
         selected={filters.categories}
         onChange={(v) => onFiltersChange({ categories: v as Category[] })}
+      />
+      <MultiSelectFilter
+        label="Tier"
+        options={ALLOWED_TIERS}
+        selected={filters.tiers}
+        onChange={(v) => onFiltersChange({ tiers: v as string[] })}
       />
 
       <div className="flex gap-2.5 ml-auto">

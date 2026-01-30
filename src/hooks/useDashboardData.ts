@@ -29,6 +29,7 @@ async function fetchAllWithPagination<T>(
     sentiments?: string[];
     contentTypes?: string[];
     categories?: string[];
+    tiers?: string[];
     startDate?: string;
     endDate?: string;
   }
@@ -52,6 +53,9 @@ async function fetchAllWithPagination<T>(
     }
     if (filters.categories && filters.categories.length > 0) {
       query = query.in('category', filters.categories);
+    }
+    if (filters.tiers && filters.tiers.length > 0) {
+      query = query.in('tier', filters.tiers);
     }
     if (filters.startDate) {
       query = query.gte('published_date', filters.startDate);
@@ -177,6 +181,7 @@ export function useDashboardData(filters: DashboardFilters, enabled: boolean = t
           sentiments: filters.sentiments.length > 0 ? filters.sentiments : undefined,
           contentTypes: filters.contentTypes.length > 0 ? filters.contentTypes : undefined,
           categories: filters.categories.length > 0 ? filters.categories : undefined,
+          tiers: filters.tiers.length > 0 ? filters.tiers : undefined,
           startDate,
           endDate,
         })
@@ -231,6 +236,7 @@ export function useDashboardData(filters: DashboardFilters, enabled: boolean = t
             sentiments: filters.sentiments.length > 0 ? filters.sentiments : undefined,
             contentTypes: filters.contentTypes.length > 0 ? filters.contentTypes : undefined,
             categories: filters.categories.length > 0 ? filters.categories : undefined,
+            tiers: filters.tiers.length > 0 ? filters.tiers : undefined,
             startDate: prevStartDate,
             endDate: prevEndDate,
           }
@@ -375,6 +381,7 @@ export function useDashboardData(filters: DashboardFilters, enabled: boolean = t
             sentiments: filters.sentiments.length > 0 ? filters.sentiments : undefined,
             contentTypes: filters.contentTypes.length > 0 ? filters.contentTypes : undefined,
             categories: filters.categories.length > 0 ? filters.categories : undefined,
+            tiers: filters.tiers.length > 0 ? filters.tiers : undefined,
             startDate: prevCatStartDate,
             endDate: prevCatEndDate,
           }

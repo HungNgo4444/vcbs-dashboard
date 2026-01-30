@@ -17,7 +17,7 @@ import { MonthlyReportSection } from '@/components/dashboard/MonthlyReportSectio
 import { AdminBar } from '@/components/admin/AdminBar';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import { format, parseISO } from 'date-fns';
-import { ArrowRight, MessageSquare, TrendingUp, X } from 'lucide-react';
+import { MessageSquare, TrendingUp, X, Search } from 'lucide-react';
 
 type ViewMode = 'mentions' | 'engagement';
 
@@ -35,6 +35,7 @@ export default function DashboardPage() {
   const { filters, appliedFilters, updateFilters, applyFilters, resetFilters } = useFilters();
   const [isUploading, setIsUploading] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('mentions');
+  const [contentSearch, setContentSearch] = useState('');
 
   // Cross-filter state for Power BI-like filtering
   const [crossFilter, setCrossFilter] = useState<CrossFilter>({
@@ -109,26 +110,41 @@ export default function DashboardPage() {
     refetch,
   } = useDashboardData(appliedFilters, dataEnabled);
 
-  // Filter articles client-side based on cross-filter (Power BI-like)
+  // Filter articles client-side based on cross-filter (Power BI-like) and content search
   const filteredArticles = useMemo(() => {
-    if (!hasCrossFilter) return articles;
+    let result = articles;
 
-    return articles.filter(article => {
-      // Date filter (format: "dd/MM")
-      if (crossFilter.date) {
-        const articleDate = format(parseISO(article.published_date), 'dd/MM');
-        if (articleDate !== crossFilter.date) return false;
-      }
-      // Channel filter
-      if (crossFilter.channel && article.channel !== crossFilter.channel) return false;
-      // Category filter
-      if (crossFilter.category && article.category !== crossFilter.category) return false;
-      // Content type filter
-      if (crossFilter.contentType && article.content_type !== crossFilter.contentType) return false;
+    // Apply cross-filter
+    if (hasCrossFilter) {
+      result = result.filter(article => {
+        // Date filter (format: "dd/MM")
+        if (crossFilter.date) {
+          const articleDate = format(parseISO(article.published_date), 'dd/MM');
+          if (articleDate !== crossFilter.date) return false;
+        }
+        // Channel filter
+        if (crossFilter.channel && article.channel !== crossFilter.channel) return false;
+        // Category filter
+        if (crossFilter.category && article.category !== crossFilter.category) return false;
+        // Content type filter
+        if (crossFilter.contentType && article.content_type !== crossFilter.contentType) return false;
 
-      return true;
-    });
-  }, [articles, crossFilter, hasCrossFilter]);
+        return true;
+      });
+    }
+
+    // Apply content search
+    if (contentSearch.trim()) {
+      const searchLower = contentSearch.toLowerCase().trim();
+      result = result.filter(article =>
+        article.content?.toLowerCase().includes(searchLower) ||
+        article.title?.toLowerCase().includes(searchLower) ||
+        article.ai_summary?.toLowerCase().includes(searchLower)
+      );
+    }
+
+    return result;
+  }, [articles, crossFilter, hasCrossFilter, contentSearch]);
 
   const handleUpload = async (file: File) => {
     setIsUploading(true);
@@ -380,13 +396,19 @@ export default function DashboardPage() {
 
               {/* Articles Table */}
               <ChartCard
-                title={`Bảng tin Chi tiết${hasCrossFilter ? ` (${filteredArticles.length}/${articles.length})` : ''}`}
+                title={`Bảng tin Chi tiết${hasCrossFilter || contentSearch ? ` (${filteredArticles.length}/${articles.length})` : ''}`}
                 subtitle="Danh sách bài viết mới nhất"
                 action={
-                  <button className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-forest-800 font-semibold text-xs bg-forest-50 border border-forest-200 hover:bg-forest-100 transition-colors">
-                    Xem tất cả
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Tìm kiếm nội dung..."
+                      value={contentSearch}
+                      onChange={(e) => setContentSearch(e.target.value)}
+                      className="pl-9 pr-3 py-1.5 w-[200px] rounded-md text-xs bg-forest-50 border border-forest-200 focus:outline-none focus:ring-2 focus:ring-forest-300 focus:border-forest-300 placeholder-gray-400"
+                    />
+                  </div>
                 }
               >
                 <ArticlesTable

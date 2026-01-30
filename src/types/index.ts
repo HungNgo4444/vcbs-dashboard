@@ -31,6 +31,7 @@ export interface Mention {
   sentiment: Sentiment;
   ai_summary: string | null;
   upload_batch_id: string | null;
+  tier: string | null;
   created_at: string;
 }
 
@@ -111,6 +112,7 @@ export interface DashboardFilters {
   sentiments: Sentiment[];
   contentTypes: ContentType[];
   categories: Category[];
+  tiers: string[];
   month: number | null; // 1-12, null = all months
   year: number | null; // e.g., 2025, null = all years
 }
@@ -177,6 +179,7 @@ export interface ExcelRow {
   'AI_THELOAINOIDUNG'?: string;
   'AI_SACTHAI'?: string;
   'AI_NOTE'?: string;
+  'Tier'?: string;
 }
 
 export interface ParsedMention {
@@ -199,6 +202,7 @@ export interface ParsedMention {
   content_type: string;
   sentiment: string;
   ai_summary: string | null;
+  tier: string | null;
 }
 
 export interface ParseResult {
