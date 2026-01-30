@@ -273,18 +273,27 @@ interface ReportListItemProps {
 }
 
 function ReportListItem({ report }: ReportListItemProps) {
+  const isPhuLuc = report.report_type === 'phu_luc';
+
   return (
     <div className="p-4 bg-forest-50/50 rounded-xl border border-forest-100 hover:bg-forest-50 transition-colors">
       <div className="flex items-start gap-3">
         <div className="w-10 h-10 rounded-lg bg-forest-100 flex items-center justify-center flex-shrink-0">
-          <Calendar className="w-4 h-4 text-forest-600" />
+          {isPhuLuc ? (
+            <FileText className="w-4 h-4 text-forest-600" />
+          ) : (
+            <Calendar className="w-4 h-4 text-forest-600" />
+          )}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs font-semibold text-forest-600 bg-forest-100 px-2 py-0.5 rounded">
-              {MONTH_NAMES[report.month - 1]} {report.year}
-            </span>
-          </div>
+          {/* Phụ lục không hiển thị tháng/năm */}
+          {!isPhuLuc && (
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-xs font-semibold text-forest-600 bg-forest-100 px-2 py-0.5 rounded">
+                {MONTH_NAMES[report.month - 1]} {report.year}
+              </span>
+            </div>
+          )}
           <h4 className="font-semibold text-forest-800 text-sm truncate">{report.title}</h4>
           <p className="text-xs text-gray-500 mt-1 line-clamp-2">
             {report.content.substring(0, 150)}...
