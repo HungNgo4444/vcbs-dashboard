@@ -56,14 +56,12 @@ export function FilterBar({ filters, onFiltersChange, onApply, onReset, availabl
         selected={filters.categories}
         onChange={(v) => onFiltersChange({ categories: v as Category[] })}
       />
-      {availableTiers.length > 0 && (
-        <MultiSelectFilter
-          label="Tier"
-          options={availableTiers}
-          selected={filters.tiers}
-          onChange={(v) => onFiltersChange({ tiers: v as string[] })}
-        />
-      )}
+      <MultiSelectFilter
+        label="Tier"
+        options={availableTiers.length > 0 ? availableTiers : ['A', 'B', 'C', 'D']}
+        selected={filters.tiers}
+        onChange={(v) => onFiltersChange({ tiers: v as string[] })}
+      />
 
       <div className="flex gap-2.5 ml-auto">
         <button
