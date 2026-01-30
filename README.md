@@ -43,12 +43,16 @@ Truy cập demo tại: **https://vcbs-dashboard.vercel.app**
 - Tự động cập nhật Articles Table theo filter
 
 ### 3. Filter System
-- Multi-select filter: Channels, Sentiments, Content Types, Categories
+- Multi-select filter: Channels, Sentiments, Content Types, Categories, Tiers
+- Tier filter luôn hiển thị với options mặc định (A, B, C, D)
 - Month/Year picker với "Toàn thời gian" option
 - Apply/Reset filters
 
 ### 4. Monthly Reports
-- Hỗ trợ 2 loại: Nhận định Báo cáo, Báo cáo Ngành
+- Hỗ trợ 3 loại báo cáo:
+  - **Nhận định Báo cáo**: Phân tích và nhận định theo tháng/năm
+  - **Báo cáo Ngành**: Báo cáo chuyên sâu về ngành theo tháng/năm
+  - **Phụ lục**: Chú thích và định nghĩa (không phân theo tháng/năm, hiển thị duy nhất 1 phụ lục)
 - Markdown editor với preview (Admin)
 - Mermaid diagram support (pie, flowchart, etc.)
 - Export PDF với fallback browser print
@@ -166,7 +170,7 @@ src/
 
 ```typescript
 // Report types
-type ReportType = 'nhan_dinh' | 'bao_cao_nganh';
+type ReportType = 'nhan_dinh' | 'bao_cao_nganh' | 'phu_luc';
 
 // Channel types
 type Channel = 'Báo mạng' | 'Facebook' | 'Youtube' | 'Tiktok';
@@ -180,8 +184,8 @@ type ContentType =
   | 'Bán hàng/Môi giới'
   | 'Tin trực tiếp về thương hiệu';
 
-// Category types (14 categories)
-type Category = 'Cổ phiếu' | 'Trái phiếu' | 'Chứng chỉ quỹ' | ...
+// Category types (15 categories)
+type Category = 'Cổ phiếu' | 'Trái phiếu' | 'Chứng chỉ quỹ' | ... | 'Khác'
 ```
 
 ## Environment Variables

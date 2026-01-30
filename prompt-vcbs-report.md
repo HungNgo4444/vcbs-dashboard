@@ -173,6 +173,30 @@ print(loai_noidung_pct.round(1).to_string())
 tier_order = ['A', 'B', 'C', 'D']
 tier_dist = bao_mang['Tier'].value_counts().reindex(tier_order, fill_value=0)
 print("\nPhân bổ Tier (Báo mạng):\n", tier_dist)
+
+# === TOP NGUỒN ĐỀ CẬP (Top 5) ===
+print("\n=== TOP 5 NGUỒN ĐỀ CẬP - BÁO MẠNG ===")
+# Group by nguồn và lấy Tier (lấy Tier phổ biến nhất của nguồn đó)
+top_sources_news = bao_mang.groupby('Nguồn phát hành').agg({
+    'Nội dung': 'count',
+    'Tier': lambda x: x.mode().iloc[0] if len(x.mode()) > 0 else 'N/A'  # Lấy Tier phổ biến nhất
+}).rename(columns={'Nội dung': 'Số bài'}).sort_values('Số bài', ascending=False).head(5)
+
+for idx, (source, row) in enumerate(top_sources_news.iterrows(), 1):
+    count = row['Số bài']
+    tier = row['Tier']
+    pct = round(count / len(bao_mang) * 100, 1)
+    print(f"{idx}. {source} | Tier {tier} | {count} bài ({pct}%)")
+
+print("\n=== TOP 5 NGUỒN ĐỀ CẬP - MXH ===")
+top_sources_social = social_media['Nguồn phát hành'].value_counts().head(5)
+total_ttt_social = social_media['TTT'].sum()
+for idx, (source, count) in enumerate(top_sources_social.items(), 1):
+    pct = round(count / len(social_media) * 100, 1)
+    # Tính tổng TTT của nguồn này
+    source_ttt = social_media[social_media['Nguồn phát hành'] == source]['TTT'].sum()
+    ttt_pct = round(source_ttt / total_ttt_social * 100, 1) if total_ttt_social > 0 else 0
+    print(f"{idx}. {source}: {count} bài ({pct}%), TTT: {int(source_ttt)} ({ttt_pct}%)")
 ```
 
 ### 4.4. Bước 4: Lọc tin tích cực / tiêu cực (CÓ LỌC TRÙNG)
@@ -351,35 +375,81 @@ for idx, (_, row) in enumerate(top_news_ab_dedup.head(20).iterrows(), 1):
     print(f"  Nội dung đầy đủ: {row['Nội dung'][:1000]}...")
 ```
 
-#### F. TOP TIN NỔI BẬT - MXH (Ưu tiên Fanpage VCBS, Tin trực tiếp, TTT cao, LỌC TRÙNG):
+#### F. TOP TIN NỔI BẬT - MXH (TÁCH THÀNH 2 PHẦN: Top TTT + Top Fanpage VCBS):
+
+> **⚠️ CẤU TRÚC MỚI CHO MXH:**
+> 
+> Phần MXH được tách thành 2 nhóm riêng biệt:
+> 1. **Top 3 bài theo TTT cao nhất** (không phân biệt nguồn)
+> 2. **Top 2 bài từ Fanpage chính thức VCBS** (phải thỏa mãn CẢ HAI điều kiện):
+>    - Cột `Fanpage = 'Fanpage'`
+>    - Cột `Nguồn phát hành = 'Vietcombank Securities - VCBS'`
+> 
+> **Giải thích cột `Fanpage`:**
+> - `Fanpage = 'Fanpage'`: Bài đăng từ fanpage (không phải trang cá nhân)
+> - `Fanpage = NaN`: Bài đăng từ trang cá nhân/group
+
 ```python
 top_social = social_media.copy()
 
-# Ưu tiên: 1) Fanpage VCBS, 2) Tin trực tiếp về thương hiệu, 3) TTT cao
-VCBS_FANPAGE = 'Vietcombank Securities - VCBS'
-top_social['Is_VCBS_Fanpage'] = (top_social['Nguồn phát hành'] == VCBS_FANPAGE).astype(int) * -1
-top_social['Is_Direct_News'] = (top_social['AI_THELOAINOIDUNG'] == 'Tin trực tiếp về thương hiệu').astype(int) * -1
-
-top_social = top_social.sort_values(
-    by=['Is_VCBS_Fanpage', 'Is_Direct_News', 'TTT'], 
-    ascending=[True, True, False]
-)
-
-# ⚠️ LỌC TRÙNG
+# ⚠️ LỌC TRÙNG trước
 top_social_dedup = top_social.drop_duplicates(subset='AI_NOTE', keep='first')
 
 print(f"=== TOP TIN NỔI BẬT - MXH ===")
 print(f"Trước lọc trùng: {len(top_social)} bài")
 print(f"Sau lọc trùng: {len(top_social_dedup)} bài (unique)")
 
-for idx, (_, row) in enumerate(top_social_dedup.head(20).iterrows(), 1):
-    print(f"\n=== BÀI {idx}/20 ===")
+# === PHẦN 1: TOP 3 BÀI THEO TTT CAO NHẤT ===
+print(f"\n{'='*50}")
+print(f"=== TOP 3 BÀI THEO TTT CAO NHẤT ===")
+print(f"{'='*50}")
+
+top_by_ttt = top_social_dedup.sort_values('TTT', ascending=False)
+
+for idx, (_, row) in enumerate(top_by_ttt.head(10).iterrows(), 1):  # Lấy 10 để đọc, chọn 3
+    print(f"\n=== BÀI {idx}/10 (TTT: {row['TTT']}) ===")
     print(f"- [{row['Phương tiện']}] {row['Nguồn phát hành']}")
     print(f"  Ngày: {row['Ngày phát hành'].strftime('%d/%m/%Y')}")
-    print(f"  TTT: {row['TTT']}")
+    print(f"  Fanpage: {row['Fanpage']}")
+    print(f"  TTT: {row['TTT']} (Like: {row['Like']}, Share: {row['Share']}, Comment: {row['Comment']})")
+    print(f"  Loại nội dung: {row['AI_THELOAINOIDUNG']}")
     print(f"  Tóm tắt: {row['AI_NOTE']}")
     print(f"  Link: {row['Link']}")
     print(f"  Nội dung đầy đủ: {row['Nội dung'][:1000]}...")
+
+# === PHẦN 2: TOP 2 BÀI TỪ FANPAGE CHÍNH THỨC VCBS ===
+print(f"\n{'='*50}")
+print(f"=== TOP 2 BÀI TỪ FANPAGE CHÍNH THỨC VCBS ===")
+print(f"(Điều kiện: Fanpage = 'Fanpage' VÀ Nguồn phát hành = 'Vietcombank Securities - VCBS')")
+print(f"{'='*50}")
+
+# Lọc các bài từ Fanpage chính thức VCBS (cần thỏa mãn CẢ HAI điều kiện)
+# ⚠️ LƯU Ý: Lọc Fanpage VCBS TRƯỚC, rồi mới lọc trùng trong nhóm này
+VCBS_FANPAGE = 'Vietcombank Securities - VCBS'
+fanpage_posts = social_media[
+    (social_media['Fanpage'] == 'Fanpage') & 
+    (social_media['Nguồn phát hành'] == VCBS_FANPAGE)
+].copy()
+
+# Lọc trùng trong nhóm Fanpage VCBS
+fanpage_posts_dedup = fanpage_posts.drop_duplicates(subset='AI_NOTE', keep='first')
+fanpage_posts_dedup = fanpage_posts_dedup.sort_values('TTT', ascending=False)
+
+print(f"Tổng số bài từ Fanpage VCBS: {len(fanpage_posts)} bài")
+print(f"Sau lọc trùng: {len(fanpage_posts_dedup)} bài (unique)")
+
+if len(fanpage_posts_dedup) > 0:
+    for idx, (_, row) in enumerate(fanpage_posts_dedup.head(5).iterrows(), 1):  # Lấy 5 để đọc, chọn 2
+        print(f"\n=== BÀI FANPAGE {idx}/5 (TTT: {row['TTT']}) ===")
+        print(f"- {row['Nguồn phát hành']}")
+        print(f"  Ngày: {row['Ngày phát hành'].strftime('%d/%m/%Y')}")
+        print(f"  TTT: {row['TTT']} (Like: {row['Like']}, Share: {row['Share']}, Comment: {row['Comment']})")
+        print(f"  Loại nội dung: {row['AI_THELOAINOIDUNG']}")
+        print(f"  Tóm tắt: {row['AI_NOTE']}")
+        print(f"  Link: {row['Link']}")
+        print(f"  Nội dung đầy đủ: {row['Nội dung'][:1000]}...")
+else:
+    print("Không có bài đăng từ Fanpage chính thức trong tháng này.")
 ```
 
 ### 4.6. Bước 6: Tổng hợp metrics
@@ -411,6 +481,176 @@ summary['% Tiêu cực'] = round(negative / total * 100, 1)
 print("=== SUMMARY METRICS ===")
 for k, v in summary.items():
     print(f"{k}: {v}")
+```
+
+### 4.7. Bước 7: Phân tích Sự kiện nổi bật (Event Analysis)
+
+> **⚠️ QUAN TRỌNG: YÊU CẦU CONFIRM TỪ USER**
+> 
+> Trước khi thống kê sự kiện, **BẮT BUỘC** phải:
+> 1. Đọc nội dung các bài viết để xác định các sự kiện nổi bật trong tháng
+> 2. **Đề xuất danh sách sự kiện và keywords** cho user
+> 3. **Chờ user confirm/chỉnh sửa keywords** trước khi chạy thống kê
+> 
+> Nếu không xác định keyword chuẩn sẽ thống kê SAI!
+
+#### A. Quy tắc xác định Keywords
+
+Keywords cần được xác định theo logic **AND + OR**:
+
+| Loại | Mô tả | Ví dụ |
+|------|-------|-------|
+| **must_have_all** | Tất cả keywords này PHẢI xuất hiện (AND) | `['vcbs', 'tăng vốn']` |
+| **must_have_any** | Ít nhất 1 trong các keywords này phải xuất hiện (OR) | `['12.500 tỷ', '12500 tỷ', 'gấp 5 lần']` |
+
+**Ví dụ cụ thể:**
+
+| Sự kiện | must_have_all (AND) | must_have_any (OR) |
+|---------|---------------------|-------------------|
+| Vietcombank tăng vốn điều lệ cho VCBS | `['vcbs', 'tăng vốn điều lệ']` | `[]` (không cần) |
+| VCBS ra mắt nền tảng V-Invest | `['vcbs', 'nền tảng giao dịch']` | `['v-invest', 'vinvest']` |
+| VCBS nhận giải thưởng Top 10 | `['vcbs', 'giải thưởng']` | `['top 10', 'margin t5', 'sản phẩm ấn tượng']` |
+
+> **Lưu ý:** 
+> - Nếu `must_have_any = []` (rỗng), chỉ cần thỏa mãn `must_have_all` là đủ
+> - Keywords nên viết lowercase và không cần dấu để tăng khả năng match
+
+#### B. Quy trình đề xuất và confirm với User
+
+```
+BƯỚC 1: Sau khi đọc nội dung, AI đề xuất cho user:
+─────────────────────────────────────────────────
+"Dựa trên dữ liệu, tôi xác định được các sự kiện nổi bật sau:
+
+📌 **Sự kiện 1: Vietcombank tăng vốn điều lệ cho VCBS**
+   - must_have_all (AND): ['vcbs', 'tăng vốn điều lệ']
+   - must_have_any (OR): [] (không cần)
+
+📌 **Sự kiện 2: VCBS ra mắt nền tảng V-Invest**
+   - must_have_all (AND): ['vcbs', 'nền tảng giao dịch']
+   - must_have_any (OR): ['v-invest', 'vinvest']
+
+📌 **Sự kiện 3: VCBS nhận giải thưởng Top 10 SP-DV**
+   - must_have_all (AND): ['vcbs', 'giải thưởng']
+   - must_have_any (OR): ['top 10', 'margin t5']
+
+Bạn có muốn chỉnh sửa keywords hoặc thêm/bớt sự kiện không?"
+
+BƯỚC 2: Chờ user confirm hoặc chỉnh sửa
+─────────────────────────────────────────────────
+- Nếu user confirm → Chạy thống kê
+- Nếu user chỉnh sửa → Cập nhật keywords và hỏi lại
+
+BƯỚC 3: Chạy thống kê với keywords đã confirm
+─────────────────────────────────────────────────
+```
+
+#### C. Code phân tích sự kiện (sau khi có keywords từ user)
+
+```python
+# === PHÂN TÍCH SỰ KIỆN NỔI BẬT ===
+# CHỈ CHẠY SAU KHI USER ĐÃ CONFIRM KEYWORDS
+
+def analyze_event(df, bao_mang, social_media, must_have_all, must_have_any, event_name):
+    """
+    Phân tích một sự kiện với logic AND + OR
+    
+    Parameters:
+    - df: DataFrame tổng
+    - bao_mang: DataFrame báo mạng
+    - social_media: DataFrame MXH
+    - must_have_all: list keywords PHẢI có tất cả (AND)
+    - must_have_any: list keywords chỉ cần có 1 (OR) - có thể để [] nếu không cần
+    - event_name: tên sự kiện
+    """
+    
+    def check_keywords(text, must_all, must_any):
+        """Kiểm tra text có chứa keywords theo logic AND + OR"""
+        if pd.isna(text):
+            return False
+        text_lower = str(text).lower()
+        
+        # Kiểm tra AND: tất cả must_have_all phải xuất hiện
+        all_present = all(kw.lower() in text_lower for kw in must_all)
+        if not all_present:
+            return False
+        
+        # Kiểm tra OR: ít nhất 1 trong must_have_any phải xuất hiện (nếu có)
+        if must_any:
+            any_present = any(kw.lower() in text_lower for kw in must_any)
+            return any_present
+        
+        return True  # Nếu không có must_any, chỉ cần thỏa mãn must_all
+    
+    # Tìm bài viết liên quan đến sự kiện (tìm trong AI_NOTE và Nội dung)
+    def is_event_related(row):
+        return (check_keywords(row['AI_NOTE'], must_have_all, must_have_any) or 
+                check_keywords(row['Nội dung'], must_have_all, must_have_any))
+    
+    # Lọc bài viết theo sự kiện
+    df_event = df[df.apply(is_event_related, axis=1)]
+    news_event = bao_mang[bao_mang.apply(is_event_related, axis=1)]
+    social_event = social_media[social_media.apply(is_event_related, axis=1)]
+    
+    # Tính toán metrics
+    total_news = len(bao_mang)
+    total_social = len(social_media)
+    total_ttt = social_media['TTT'].sum()
+    
+    news_count = len(news_event)
+    news_pct = round(news_count / total_news * 100, 1) if total_news > 0 else 0
+    
+    social_count = len(social_event)
+    social_pct = round(social_count / total_social * 100, 1) if total_social > 0 else 0
+    
+    social_ttt = social_event['TTT'].sum()
+    ttt_pct = round(social_ttt / total_ttt * 100, 1) if total_ttt > 0 else 0
+    
+    print(f"\n{'='*60}")
+    print(f"📌 SỰ KIỆN: {event_name}")
+    print(f"{'='*60}")
+    print(f"Keywords AND (phải có tất cả): {must_have_all}")
+    print(f"Keywords OR (cần ít nhất 1): {must_have_any}")
+    print(f"\n📊 THỐNG KÊ:")
+    print(f"   Báo mạng: {news_count} bài ({news_pct}% tổng báo mạng)")
+    print(f"   MXH: {social_count} bài ({social_pct}% tổng MXH)")
+    print(f"   TTT trên MXH: {int(social_ttt)} lượt ({ttt_pct}% tổng TTT)")
+    
+    return {
+        'event_name': event_name,
+        'news_count': news_count,
+        'news_pct': news_pct,
+        'social_count': social_count,
+        'social_pct': social_pct,
+        'social_ttt': int(social_ttt),
+        'ttt_pct': ttt_pct
+    }
+
+# === VÍ DỤ SỬ DỤNG (sau khi user confirm keywords) ===
+
+# Sự kiện 1: Vietcombank tăng vốn điều lệ cho VCBS
+# event_1 = analyze_event(
+#     df, bao_mang, social_media,
+#     must_have_all=['vcbs', 'tăng vốn điều lệ'],
+#     must_have_any=[],  # Không cần OR
+#     event_name='Vietcombank tăng vốn điều lệ cho VCBS'
+# )
+
+# Sự kiện 2: VCBS ra mắt V-Invest
+# event_2 = analyze_event(
+#     df, bao_mang, social_media,
+#     must_have_all=['vcbs', 'nền tảng giao dịch'],
+#     must_have_any=['v-invest', 'vinvest'],
+#     event_name='VCBS ra mắt nền tảng giao dịch V-Invest'
+# )
+
+# Sự kiện 3: VCBS nhận giải thưởng
+# event_3 = analyze_event(
+#     df, bao_mang, social_media,
+#     must_have_all=['vcbs', 'giải thưởng'],
+#     must_have_any=['top 10', 'margin t5', 'sản phẩm ấn tượng'],
+#     event_name='VCBS nhận giải thưởng Top 10 Sản phẩm - Dịch vụ ấn tượng 2025'
+# )
 ```
 
 ---
@@ -469,18 +709,80 @@ Ví dụ: `[VCBS tăng vốn điều lệ lên 12.500 tỷ đồng](https://link
 - Tier C: [số] bài ([%]%)
 - Tier D: [số] bài ([%]%)
 
+### 1.5. Top nguồn đề cập
+
+**Báo mạng (Top 5):**
+
+| # | Nguồn | Tier | Số bài | Tỷ lệ |
+|---|-------|------|--------|-------|
+| 1 | [Nguồn 1] | [A/B/C/D] | [số] | [%]% |
+| 2 | [Nguồn 2] | [A/B/C/D] | [số] | [%]% |
+| 3 | [Nguồn 3] | [A/B/C/D] | [số] | [%]% |
+| 4 | [Nguồn 4] | [A/B/C/D] | [số] | [%]% |
+| 5 | [Nguồn 5] | [A/B/C/D] | [số] | [%]% |
+
+**Mạng xã hội (Top 5):**
+
+| # | Nguồn | Số bài | Tỷ lệ bài | TTT | Tỷ lệ TTT |
+|---|-------|--------|-----------|-----|-----------|
+| 1 | [Nguồn 1] | [số] | [%]% | [số] | [%]% |
+| 2 | [Nguồn 2] | [số] | [%]% | [số] | [%]% |
+| 3 | [Nguồn 3] | [số] | [%]% | [số] | [%]% |
+| 4 | [Nguồn 4] | [số] | [%]% | [số] | [%]% |
+| 5 | [Nguồn 5] | [số] | [%]% | [số] | [%]% |
+
 ---
 
-## 2. PHÂN TÍCH CHỈ SỐ CẢM XÚC (Sentiment)
+## 2. SỰ KIỆN NỔI BẬT TRONG THÁNG
 
-### 2.1. Tổng quan
+> **Hướng dẫn:** Với mỗi sự kiện nổi bật, cần thống kê:
+> - Số bài đề cập và % trên Báo mạng
+> - Số bài đề cập và % trên MXH
+> - Tổng TTT và % so với tổng TTT của MXH
+
+### 2.1. [Tên sự kiện 1]
+
+[Mô tả ngắn gọn về sự kiện]
+
+**Thống kê đề cập:**
+
+| Kênh | Số bài | Tỷ lệ | TTT | Tỷ lệ TTT |
+|------|--------|-------|-----|-----------|
+| Báo mạng | [số] | [%]% | - | - |
+| MXH | [số] | [%]% | [số] | [%]% |
+
+**Nội dung chính:**
+- [Điểm nổi bật 1]
+- [Điểm nổi bật 2]
+- [Điểm nổi bật 3]
+
+### 2.2. [Tên sự kiện 2]
+
+[Mô tả ngắn gọn về sự kiện]
+
+**Thống kê đề cập:**
+
+| Kênh | Số bài | Tỷ lệ | TTT | Tỷ lệ TTT |
+|------|--------|-------|-----|-----------|
+| Báo mạng | [số] | [%]% | - | - |
+| MXH | [số] | [%]% | [số] | [%]% |
+
+**Nội dung chính:**
+- [Điểm nổi bật 1]
+- [Điểm nổi bật 2]
+
+---
+
+## 3. PHÂN TÍCH CHỈ SỐ CẢM XÚC (Sentiment)
+
+### 3.1. Tổng quan
 [Mô tả ngắn gọn về tông màu chung của thương hiệu trong tháng]
 - NSR% = [X]% → [Diễn giải: Tích cực/Trung tính/Tiêu cực]
 - [X]% bài viết mang tông màu tích cực
 - [Y]% trung tính
 - [Z]% tiêu cực
 
-### 2.2. Theo nguồn tin đề cập
+### 3.2. Theo nguồn tin đề cập
 
 [Chỉ liệt kê các kênh CÓ TRONG DATA]
 
@@ -488,7 +790,7 @@ Ví dụ: `[VCBS tăng vốn điều lệ lên 12.500 tỷ đồng](https://link
 - [Phương tiện 2]: [X]% tích cực, [Y]% trung tính, [Z]% tiêu cực
 - ...
 
-### 2.3. Top tin tích cực
+### 3.3. Top tin tích cực
 
 **Báo điện tử (Top 5 - Tier A/B):**
 
@@ -502,7 +804,7 @@ Ví dụ: `[VCBS tăng vốn điều lệ lên 12.500 tỷ đồng](https://link
 |------|-------|-----|----------|
 | [DD/MM/YYYY] | [Nguồn] | [số] | [AI_NOTE - hyperlink](URL) |
 
-### 2.4. Tin tiêu cực cần lưu ý
+### 3.4. Tin tiêu cực cần lưu ý
 
 [Nếu không có tin tiêu cực, ghi: "Không có tin tiêu cực trong tháng này."]
 
@@ -520,23 +822,35 @@ Ví dụ: `[VCBS tăng vốn điều lệ lên 12.500 tỷ đồng](https://link
 
 ---
 
-## 3. TIN NỔI BẬT
+## 4. TIN NỔI BẬT
 
-### 3.1. Báo điện tử (Top 5 - Tin trực tiếp về thương hiệu, Tier A/B)
+### 4.1. Báo điện tử (Top 5 - Tin trực tiếp về thương hiệu, Tier A/B)
 
 | Ngày | Nguồn | Tier | Nội dung |
 |------|-------|------|----------|
 | [DD/MM/YYYY] | [Nguồn] | [A/B] | [AI_NOTE - hyperlink](URL) |
 
-### 3.2. Mạng xã hội (Top 5 - Ưu tiên Fanpage VCBS, Tin trực tiếp, TTT cao)
+### 4.2. Mạng xã hội
+
+> **Cấu trúc:** Phần MXH được tách thành 2 nhóm riêng biệt:
+> - Top 3 bài theo TTT cao nhất (tất cả nguồn)
+> - Top 2 bài từ Fanpage chính thức VCBS (Fanpage = 'Fanpage' VÀ Nguồn = 'Vietcombank Securities - VCBS')
+
+#### 4.2.1. Top 3 bài theo TTT cao nhất
 
 | Ngày | Nguồn | TTT | Nội dung |
 |------|-------|-----|----------|
 | [DD/MM/YYYY] | [Nguồn] | [số] | [AI_NOTE - hyperlink](URL) |
 
+#### 4.2.2. Top 2 bài từ Fanpage chính thức VCBS
+
+| Ngày | Nguồn | TTT | Nội dung |
+|------|-------|-----|----------|
+| [DD/MM/YYYY] | Vietcombank Securities - VCBS | [số] | [AI_NOTE - hyperlink](URL) |
+
 ---
 
-## 4. KHUYẾN NGHỊ CHO VCBS
+## 5. KHUYẾN NGHỊ CHO VCBS
 
 [Dựa trên việc đọc **Nội dung đầy đủ** của các bài viết nổi bật, đưa ra khuyến nghị có chiều sâu]
 
@@ -574,18 +888,22 @@ Ví dụ: `[VCBS tăng vốn điều lệ lên 12.500 tỷ đồng](https://link
 | 14 | **⚠️ LỌC TRÙNG THEO AI_NOTE** | BẮT BUỘC dùng `drop_duplicates(subset='AI_NOTE', keep='first')` cho tất cả các Top tin |
 | 15 | **⚠️ PHƯƠNG TIỆN LẤY TỪ DATA** | KHÔNG hardcode danh sách phương tiện, phải lấy `unique()` từ cột `Phương tiện` |
 | 16 | **⚠️ LẤY 20 → ĐỌC → CHỌN 5** | Lấy Top 20 bài, đọc nội dung, chọn Top 5 hay nhất (không lấy máy móc theo metrics) |
-| 17 | **⚠️ ƯU TIÊN FANPAGE VCBS** | Trên MXH, luôn ưu tiên bài từ fanpage **"Vietcombank Securities - VCBS"** trước |
+| 17 | **⚠️ PHÂN TÍCH SỰ KIỆN** | Với mỗi sự kiện nổi bật, thống kê số bài + % trên Báo mạng và MXH; MXH thêm TTT + % |
+| 18 | **⚠️ CỘT FANPAGE** | `Fanpage = 'Fanpage'` là bài từ fanpage; `Fanpage = NaN` là trang cá nhân |
+| 19 | **⚠️ CẤU TRÚC MXH MỚI** | Top 3 theo TTT + Top 2 từ Fanpage VCBS (`Fanpage = 'Fanpage'` VÀ `Nguồn = 'Vietcombank Securities - VCBS'`) |
 
 ### 6.2. Xử lý theo loại kênh
 
 | Kênh | Metrics ưu tiên | Tiêu chí lọc Top (theo thứ tự) | Hiển thị trong báo cáo |
 |------|-----------------|-------------------------------|------------------------|
 | **Báo mạng** | `Tier`, `Giá trị truyền thông`, `AI_THELOAINOIDUNG` | 1) Tier A/B, 2) GTTT cao, 3) "Tin trực tiếp về thương hiệu", **LỌC TRÙNG** | Ngày, Nguồn, Tier, Nội dung (hyperlink) |
-| **Social Media** | `Nguồn phát hành`, `AI_THELOAINOIDUNG`, `TTT` | 1) Fanpage **"Vietcombank Securities - VCBS"**, 2) "Tin trực tiếp về thương hiệu", 3) TTT cao, **LỌC TRÙNG** | Ngày, Nguồn, TTT, Nội dung (hyperlink) |
+| **Social Media - Top TTT** | `TTT` | Sắp xếp theo TTT giảm dần, **LỌC TRÙNG**, lấy Top 3 | Ngày, Nguồn, TTT, Nội dung (hyperlink) |
+| **Social Media - Fanpage VCBS** | `Fanpage`, `Nguồn phát hành`, `TTT` | Lọc `Fanpage = 'Fanpage'` VÀ `Nguồn phát hành = 'Vietcombank Securities - VCBS'`, sắp xếp TTT giảm dần, **LỌC TRÙNG**, lấy Top 2 | Ngày, Nguồn, TTT, Nội dung (hyperlink) |
 
 **Lưu ý đặc biệt cho MXH:**
-- Fanpage chính thức của VCBS: **"Vietcombank Securities - VCBS"**
-- Luôn ưu tiên bài từ fanpage chính thức trước, sau đó mới xét các tiêu chí khác
+- Cột `Fanpage = 'Fanpage'`: Bài đăng từ Fanpage (không phải trang cá nhân)
+- Cột `Fanpage = NaN`: Bài đăng từ trang cá nhân/group
+- **Top 2 Fanpage VCBS** phải thỏa mãn CẢ HAI điều kiện: `Fanpage = 'Fanpage'` VÀ `Nguồn phát hành = 'Vietcombank Securities - VCBS'`
 
 ### 6.3. Nguồn báo mạng theo Tier
 
@@ -660,7 +978,10 @@ Ví dụ: `[VCBS tăng vốn điều lệ lên 12.500 tỷ đồng](https://link
    - LẤY DANH SÁCH PHƯƠNG TIỆN TỪ DATA (unique)
    - Tính NSR% từ cột AI_SACTHAI
    - Tạo CROSSTAB loại nội dung x phương tiện
-   - Lọc tin nổi bật (Báo mạng: Tier A/B + GTTT, MXH: TTT)
+   - ⚠️ TÍNH TOP 5 NGUỒN ĐỀ CẬP (Báo mạng + MXH)
+   - Lọc tin nổi bật:
+     + Báo mạng: Tier A/B + GTTT
+     + MXH: Top 3 theo TTT + Top 2 từ Fanpage (cột Fanpage = 'Fanpage')
    - Lọc tin tích cực/tiêu cực riêng cho từng kênh
    - ⚠️ LỌC TRÙNG THEO AI_NOTE cho tất cả các Top tin
    - ⚠️ LẤY TOP 20 BÀI (không phải 5) để đọc và chọn lọc
@@ -670,13 +991,24 @@ Ví dụ: `[VCBS tăng vốn điều lệ lên 12.500 tỷ đồng](https://link
    - Đánh giá mức độ liên quan thực sự đến VCBS
    - Xác định insight có giá trị
    - Chọn TOP 5 bài hay nhất, đa dạng chủ đề
+   - ⚠️ XÁC ĐỊNH CÁC SỰ KIỆN NỔI BẬT trong tháng
    ↓
-4. Dựa vào kết quả Python + đọc Nội dung, viết báo cáo Markdown
+4. ⚠️ ĐỀ XUẤT SỰ KIỆN VÀ KEYWORDS CHO USER:
+   - Liệt kê các sự kiện nổi bật đã xác định
+   - Đề xuất keywords cho mỗi sự kiện (must_have_all + must_have_any)
+   - HỎI USER: "Bạn có muốn chỉnh sửa keywords hoặc thêm/bớt sự kiện không?"
+   - ⚠️ CHỜ USER CONFIRM trước khi thống kê
    ↓
-5. Đưa ra Khuyến nghị dựa trên insight từ Nội dung
+5. Sau khi user confirm → Chạy thống kê SỰ KIỆN:
+   - Với mỗi sự kiện: đếm số bài + % trên Báo mạng
+   - Với mỗi sự kiện: đếm số bài + % trên MXH + TTT + % TTT
+   ↓
+6. Dựa vào kết quả Python + đọc Nội dung, viết báo cáo Markdown
+   ↓
+7. Đưa ra Khuyến nghị dựa trên insight từ Nội dung
    ⚠️ TUÂN THỦ QUY TẮC DIỄN GIẢI (Section 6.5)
    ↓
-6. Xuất file .md cho user
+8. Xuất file .md cho user
 ```
 
 ---
@@ -686,8 +1018,11 @@ Ví dụ: `[VCBS tăng vốn điều lệ lên 12.500 tỷ đồng](https://link
 - [ ] Đã dùng Python để xử lý dữ liệu
 - [ ] Danh sách Phương tiện lấy từ data (không hardcode)
 - [ ] Bảng phân bổ loại nội dung theo dạng crosstab (Phương tiện x Loại)
+- [ ] ⚠️ **Có phần 1.5. Top nguồn đề cập** (Top 5 Báo mạng + Top 5 MXH với TTT)
 - [ ] Đã lọc trùng theo AI_NOTE cho TẤT CẢ các Top tin
 - [ ] ⚠️ **Đã lấy Top 20 → Đọc nội dung → Chọn Top 5 hay nhất** (không lấy máy móc theo metrics)
+- [ ] ⚠️ **Phần 2. SỰ KIỆN NỔI BẬT có thống kê số bài + % cho Báo mạng và MXH** (MXH thêm TTT + %)
+- [ ] ⚠️ **Phần 4.2. MXH tách thành Top 3 TTT + Top 2 Fanpage VCBS** (Fanpage='Fanpage' VÀ Nguồn='Vietcombank Securities - VCBS')
 - [ ] Đã hyperlink trực tiếp vào AI_NOTE (không có cột Link riêng)
 - [ ] Không hiển thị GTTT trong báo cáo
 - [ ] Đã đọc cột Nội dung để viết Khuyến nghị có chiều sâu
