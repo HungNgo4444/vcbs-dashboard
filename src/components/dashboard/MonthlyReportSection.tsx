@@ -72,16 +72,19 @@ export function MonthlyReportSection({ month, year, isAdmin }: MonthlyReportSect
     return reportTypeLabel;
   }, [month, year, isSpecificMonthYear, isPhuLuc, reportTypeLabel]);
 
+  // Phụ lục chỉ có duy nhất 1, lấy từ reports array
+  const phuLucReport = isPhuLuc && reports.length > 0 ? reports[0] : null;
+
   const subtitle = useMemo(() => {
-    // Phụ lục luôn hiển thị số lượng
+    // Phụ lục hiển thị trạng thái
     if (isPhuLuc) {
-      return `${reports.length} phụ lục`;
+      return phuLucReport ? 'Chú thích và định nghĩa' : 'Chưa có phụ lục';
     }
     if (isSpecificMonthYear) {
       return report ? 'Tổng hợp phân tích tháng' : 'Chưa có báo cáo cho thời gian này';
     }
     return `${reports.length} báo cáo`;
-  }, [isSpecificMonthYear, isPhuLuc, report, reports.length]);
+  }, [isSpecificMonthYear, isPhuLuc, report, phuLucReport, reports.length]);
 
   if (isLoading) {
     return (
@@ -101,8 +104,10 @@ export function MonthlyReportSection({ month, year, isAdmin }: MonthlyReportSect
     );
   }
 
-  // Specific month/year view - show single report or empty state with sidebar
-  if (isSpecificMonthYear) {
+  // Phụ lục: luôn hiển thị preview (chỉ có 1 phụ lục duy nhất)
+  // Specific month/year view: show single report
+  if (isSpecificMonthYear || isPhuLuc) {
+    const displayReport = isPhuLuc ? phuLucReport : report;
     return (
       <div
         className="bg-white rounded-2xl p-6 h-full"
@@ -120,7 +125,7 @@ export function MonthlyReportSection({ month, year, isAdmin }: MonthlyReportSect
 
           {/* Content */}
           <div className="flex-1 min-w-0 flex justify-center">
-            {report ? (
+            {displayReport ? (
               <div className="max-w-4xl w-full">
                 {/* Title centered in content area */}
                 <div className="text-center mb-6">
@@ -129,12 +134,12 @@ export function MonthlyReportSection({ month, year, isAdmin }: MonthlyReportSect
                   <div className="flex items-center justify-center gap-2 mt-3">
                     {/* Export PDF - hiển thị cho tất cả users */}
                     <button
-                      onClick={() => exportToPDF(report.id)}
-                      disabled={isExporting && exportingId === report.id}
+                      onClick={() => exportToPDF(displayReport.id)}
+                      disabled={isExporting && exportingId === displayReport.id}
                       className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-forest-800 font-semibold text-xs bg-forest-50 border border-forest-200 hover:bg-forest-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Download className="w-3.5 h-3.5" />
-                      {isExporting && exportingId === report.id ? 'Đang xuất...' : 'Xuất PDF'}
+                      {isExporting && exportingId === displayReport.id ? 'Đang xuất...' : 'Xuất PDF'}
                     </button>
                     {/* Chỉnh sửa - chỉ hiển thị cho admin */}
                     {isAdmin && (
@@ -149,10 +154,13 @@ export function MonthlyReportSection({ month, year, isAdmin }: MonthlyReportSect
                   </div>
                 </div>
                 {/* Content display - data-report-id for browser print fallback */}
-                <div data-report-id={report.id} className="bg-white p-6">
+                <div data-report-id={displayReport.id} className="bg-white p-6">
                   <div className="text-center mb-4">
-                    <h1 className="text-2xl font-bold text-forest-800">{report.title}</h1>
-                    <p className="text-sm text-gray-500">{MONTH_NAMES[report.month - 1]} {report.year}</p>
+                    <h1 className="text-2xl font-bold text-forest-800">{displayReport.title}</h1>
+                    {/* Phụ lục không hiển thị tháng/năm */}
+                    {!isPhuLuc && (
+                      <p className="text-sm text-gray-500">{MONTH_NAMES[displayReport.month - 1]} {displayReport.year}</p>
+                    )}
                   </div>
                   <div className="prose prose-sm max-w-none
                     prose-headings:text-forest-800 prose-headings:font-bold
@@ -171,12 +179,12 @@ export function MonthlyReportSection({ month, year, isAdmin }: MonthlyReportSect
                     prose-hr:border-forest-200
                   ">
                     <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-                      {report.content}
+                      {displayReport.content}
                     </ReactMarkdown>
                   </div>
                 </div>
                 <div className="mt-6 pt-4 border-t border-forest-100 text-xs text-gray-500 flex items-center gap-4">
-                  <span>Cập nhật: {new Date(report.updated_at).toLocaleDateString('vi-VN', {
+                  <span>Cập nhật: {new Date(displayReport.updated_at).toLocaleDateString('vi-VN', {
                     day: '2-digit',
                     month: '2-digit',
                     year: 'numeric',
@@ -203,7 +211,12 @@ export function MonthlyReportSection({ month, year, isAdmin }: MonthlyReportSect
                 </div>
                 <div className="py-8 text-center">
                   <FileText className="w-10 h-10 mx-auto mb-3 text-gray-300" />
-                  <p className="text-gray-500 text-sm">Chưa có {reportTypeLabel.toLowerCase()} cho {MONTH_NAMES[month - 1]} {year}</p>
+                  <p className="text-gray-500 text-sm">
+                    {isPhuLuc
+                      ? 'Chưa có phụ lục'
+                      : `Chưa có ${reportTypeLabel.toLowerCase()} cho ${month !== null ? MONTH_NAMES[month - 1] : ''} ${year}`
+                    }
+                  </p>
                 </div>
               </div>
             )}
