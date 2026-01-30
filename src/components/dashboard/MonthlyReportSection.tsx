@@ -48,7 +48,9 @@ const MONTH_NAMES = [
 
 export function MonthlyReportSection({ month, year, isAdmin }: MonthlyReportSectionProps) {
   const [selectedReportType, setSelectedReportType] = useState<ReportType>('nhan_dinh');
-  const isSpecificMonthYear = month !== null && year !== null;
+  // Phụ lục không filter theo tháng/năm - luôn hiển thị tất cả
+  const isPhuLuc = selectedReportType === 'phu_luc';
+  const isSpecificMonthYear = month !== null && year !== null && !isPhuLuc;
   const { exportToPDF, isExporting, exportingId } = useExportPDF();
 
   const { report, reports, isLoading, error } = useMonthlyReports({
@@ -60,18 +62,26 @@ export function MonthlyReportSection({ month, year, isAdmin }: MonthlyReportSect
   const reportTypeLabel = REPORT_TYPES.find(t => t.value === selectedReportType)?.label || 'Báo cáo';
 
   const title = useMemo(() => {
-    if (isSpecificMonthYear) {
+    // Phụ lục không hiển thị tháng/năm trong title
+    if (isPhuLuc) {
+      return reportTypeLabel;
+    }
+    if (isSpecificMonthYear && month !== null && year !== null) {
       return `${reportTypeLabel} - ${MONTH_NAMES[month - 1]} ${year}`;
     }
     return reportTypeLabel;
-  }, [month, year, isSpecificMonthYear, reportTypeLabel]);
+  }, [month, year, isSpecificMonthYear, isPhuLuc, reportTypeLabel]);
 
   const subtitle = useMemo(() => {
+    // Phụ lục luôn hiển thị số lượng
+    if (isPhuLuc) {
+      return `${reports.length} phụ lục`;
+    }
     if (isSpecificMonthYear) {
       return report ? 'Tổng hợp phân tích tháng' : 'Chưa có báo cáo cho thời gian này';
     }
     return `${reports.length} báo cáo`;
-  }, [isSpecificMonthYear, report, reports.length]);
+  }, [isSpecificMonthYear, isPhuLuc, report, reports.length]);
 
   if (isLoading) {
     return (
