@@ -77,11 +77,14 @@ export default function AdminReportsPage() {
     }
   }, [isAdmin, authLoading, router]);
 
+  const isPhuLuc = activeTab === 'phu_luc';
+
   const handleNewReport = () => {
     setEditingReport(null);
     setFormData({
-      month: new Date().getMonth() + 1,
-      year: currentYear,
+      // Phụ lục dùng giá trị mặc định (không hiển thị cho user)
+      month: isPhuLuc ? 1 : new Date().getMonth() + 1,
+      year: isPhuLuc ? 9999 : currentYear,
       title: '',
       content: '',
       report_type: activeTab,
@@ -104,7 +107,12 @@ export default function AdminReportsPage() {
   };
 
   const handleDeleteReport = async (report: MonthlyReport) => {
-    if (!confirm(`Bạn có chắc muốn xóa nhận định tháng ${report.month}/${report.year}?`)) {
+    const isReportPhuLuc = report.report_type === 'phu_luc';
+    const confirmMsg = isReportPhuLuc
+      ? `Bạn có chắc muốn xóa phụ lục "${report.title}"?`
+      : `Bạn có chắc muốn xóa nhận định tháng ${report.month}/${report.year}?`;
+
+    if (!confirm(confirmMsg)) {
       return;
     }
 
@@ -212,45 +220,21 @@ export default function AdminReportsPage() {
       {isEditing ? (
         /* Edit/Create Form */
         <ChartCard
-          title={editingReport ? `Chỉnh sửa nhận định ${editingReport.month}/${editingReport.year}` : 'Tạo nhận định mới'}
+          title={
+            editingReport
+              ? isPhuLuc
+                ? `Chỉnh sửa phụ lục`
+                : `Chỉnh sửa nhận định ${editingReport.month}/${editingReport.year}`
+              : isPhuLuc
+                ? 'Tạo phụ lục mới'
+                : 'Tạo nhận định mới'
+          }
           subtitle="Sử dụng Markdown để định dạng nội dung"
         >
           <div className="space-y-5">
-            {/* Month/Year/Title row */}
-            <div className="grid grid-cols-4 gap-4">
+            {/* Month/Year/Title row - Phụ lục không cần chọn tháng/năm */}
+            {isPhuLuc ? (
               <div>
-                <label className="block text-xs text-forest-700 font-bold uppercase tracking-wider mb-1.5">
-                  Tháng
-                </label>
-                <select
-                  value={formData.month}
-                  onChange={(e) => setFormData({ ...formData, month: parseInt(e.target.value) })}
-                  className="w-full px-3 py-2.5 rounded-lg border-2 border-forest-200 text-forest-800 text-sm font-medium focus:border-forest-500 outline-none"
-                >
-                  {MONTHS.map((m) => (
-                    <option key={m.value} value={m.value}>
-                      {m.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs text-forest-700 font-bold uppercase tracking-wider mb-1.5">
-                  Năm
-                </label>
-                <select
-                  value={formData.year}
-                  onChange={(e) => setFormData({ ...formData, year: parseInt(e.target.value) })}
-                  className="w-full px-3 py-2.5 rounded-lg border-2 border-forest-200 text-forest-800 text-sm font-medium focus:border-forest-500 outline-none"
-                >
-                  {YEARS.map((y) => (
-                    <option key={y} value={y}>
-                      {y}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="col-span-2">
                 <label className="block text-xs text-forest-700 font-bold uppercase tracking-wider mb-1.5">
                   Tiêu đề
                 </label>
@@ -258,11 +242,58 @@ export default function AdminReportsPage() {
                   type="text"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  placeholder="Nhập tiêu đề nhận định..."
+                  placeholder="Nhập tiêu đề phụ lục..."
                   className="w-full px-3 py-2.5 rounded-lg border-2 border-forest-200 text-forest-800 text-sm font-medium focus:border-forest-500 outline-none"
                 />
               </div>
-            </div>
+            ) : (
+              <div className="grid grid-cols-4 gap-4">
+                <div>
+                  <label className="block text-xs text-forest-700 font-bold uppercase tracking-wider mb-1.5">
+                    Tháng
+                  </label>
+                  <select
+                    value={formData.month}
+                    onChange={(e) => setFormData({ ...formData, month: parseInt(e.target.value) })}
+                    className="w-full px-3 py-2.5 rounded-lg border-2 border-forest-200 text-forest-800 text-sm font-medium focus:border-forest-500 outline-none"
+                  >
+                    {MONTHS.map((m) => (
+                      <option key={m.value} value={m.value}>
+                        {m.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs text-forest-700 font-bold uppercase tracking-wider mb-1.5">
+                    Năm
+                  </label>
+                  <select
+                    value={formData.year}
+                    onChange={(e) => setFormData({ ...formData, year: parseInt(e.target.value) })}
+                    className="w-full px-3 py-2.5 rounded-lg border-2 border-forest-200 text-forest-800 text-sm font-medium focus:border-forest-500 outline-none"
+                  >
+                    {YEARS.map((y) => (
+                      <option key={y} value={y}>
+                        {y}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-xs text-forest-700 font-bold uppercase tracking-wider mb-1.5">
+                    Tiêu đề
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.title}
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    placeholder="Nhập tiêu đề nhận định..."
+                    className="w-full px-3 py-2.5 rounded-lg border-2 border-forest-200 text-forest-800 text-sm font-medium focus:border-forest-500 outline-none"
+                  />
+                </div>
+              </div>
+            )}
 
             {/* Markdown Editor */}
             <div>
@@ -334,41 +365,48 @@ export default function AdminReportsPage() {
             </div>
           ) : (
             <div className="divide-y divide-forest-100">
-              {reports.map((report) => (
-                <div
-                  key={report.id}
-                  className="py-4 flex items-center justify-between hover:bg-forest-50/50 -mx-2 px-2 rounded-lg transition-colors"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-lg bg-forest-100 flex items-center justify-center">
-                      <Calendar className="w-5 h-5 text-forest-600" />
+              {reports.map((report) => {
+                const isReportPhuLuc = report.report_type === 'phu_luc';
+                return (
+                  <div
+                    key={report.id}
+                    className="py-4 flex items-center justify-between hover:bg-forest-50/50 -mx-2 px-2 rounded-lg transition-colors"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-lg bg-forest-100 flex items-center justify-center">
+                        {isReportPhuLuc ? (
+                          <FileText className="w-5 h-5 text-forest-600" />
+                        ) : (
+                          <Calendar className="w-5 h-5 text-forest-600" />
+                        )}
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-forest-800">{report.title}</h3>
+                        <p className="text-sm text-gray-500">
+                          {isReportPhuLuc ? '' : `Tháng ${report.month}/${report.year} • `}
+                          Cập nhật: {new Date(report.updated_at).toLocaleDateString('vi-VN')}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="font-semibold text-forest-800">{report.title}</h3>
-                      <p className="text-sm text-gray-500">
-                        Tháng {report.month}/{report.year} • Cập nhật:{' '}
-                        {new Date(report.updated_at).toLocaleDateString('vi-VN')}
-                      </p>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleEditReport(report)}
+                        className="p-2 text-forest-600 hover:bg-forest-100 rounded-lg transition-colors"
+                        title="Chỉnh sửa"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteReport(report)}
+                        className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Xóa"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => handleEditReport(report)}
-                      className="p-2 text-forest-600 hover:bg-forest-100 rounded-lg transition-colors"
-                      title="Chỉnh sửa"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteReport(report)}
-                      className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                      title="Xóa"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </ChartCard>

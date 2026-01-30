@@ -97,9 +97,10 @@ SẮC THÁI đánh giá **THÁI ĐỘ CỦA NỘI DUNG ĐỐI VỚI VCBS**, khô
 
 ### Nguồn báo mạng theo Tier
 
+
 | Tier | Mô tả | Ví dụ |
 |------|-------|-------|
 | **A** | Báo lớn, uy tín cao | VnExpress, CafeF, VietnamBiz, Thanh Niên, Tuổi Trẻ |
 | **B** | Báo trung bình | BaoMoi, Dân Trí, VTV, Người Lao Động |
-| **C** | Báo nhỏ | Báo địa phương, chuyên ngành nhỏ |
-| **D** | Nguồn khác | Blog, website doanh nghiệp |
+| **C** | Báo nhỏ | Báo địa phương, chuyên ngành nhỏ như baoangiang.com.vn, baolangson.vn,... |
+| **D** | Nguồn khác | Blog, website doanh nghiệp như trading.vietcap.com.vn, 24hmoney.vn, fireant.vn, dnse.com.vn,... |
