@@ -277,9 +277,10 @@ function generatePdfHtml(report: {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const supabase = await createClient();
 
     // Check authentication
@@ -292,7 +293,7 @@ export async function GET(
     const { data: report, error: fetchError } = await supabase
       .from('monthly_reports')
       .select('*')
-      .eq('id', params.id)
+      .eq('id', id)
       .single();
 
     if (fetchError || !report) {
