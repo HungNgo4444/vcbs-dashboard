@@ -256,7 +256,3 @@ vercel deploy
 1. Sử dụng `@sparticuz/chromium-min`
 2. Host Chromium binary trên S3/CDN
 3. Update `chromium.executablePath(url)`
-
-## License
-
-Private - VCBS Internal Use Only
