@@ -43,16 +43,16 @@ export async function DELETE(
       );
     }
 
-    // Then delete the upload history record
+    // Soft delete: update status to 'deleted' instead of hard delete
     const { error: historyError } = await supabase
       .from('upload_history')
-      .delete()
+      .update({ status: 'deleted' })
       .eq('id', id);
 
     if (historyError) {
-      console.error('Error deleting upload history:', historyError);
+      console.error('Error updating upload history:', historyError);
       return NextResponse.json(
-        { error: 'Failed to delete upload record', details: historyError.message },
+        { error: 'Failed to update upload record', details: historyError.message },
         { status: 500 }
       );
     }

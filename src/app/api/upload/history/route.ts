@@ -31,7 +31,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
 
-    // Fetch upload history with uploader info
+    // Fetch upload history with uploader info (exclude soft-deleted records)
     const { data, error } = await supabase
       .from('upload_history')
       .select(`
@@ -41,6 +41,7 @@ export async function GET() {
           full_name
         )
       `)
+      .neq('status', 'deleted')
       .order('created_at', { ascending: false })
       .limit(50);
 

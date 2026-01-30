@@ -105,6 +105,7 @@ export default function DashboardPage() {
     categoryData,
     articles,
     availableYears,
+    availableTiers,
     isLoading,
     error,
     refetch,
@@ -223,6 +224,7 @@ export default function DashboardPage() {
         onApply={applyFilters}
         onReset={resetFilters}
         availableYears={availableYears}
+        availableTiers={availableTiers}
       />
 
       {/* Main Content */}

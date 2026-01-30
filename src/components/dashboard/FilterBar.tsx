@@ -6,7 +6,6 @@ import {
   ALLOWED_SENTIMENTS,
   ALLOWED_CONTENT_TYPES,
   ALLOWED_CATEGORIES,
-  ALLOWED_TIERS,
 } from '@/lib/constants';
 import { MonthPicker } from './MonthPicker';
 import { MultiSelectFilter } from './MultiSelectFilter';
@@ -18,9 +17,10 @@ interface FilterBarProps {
   onApply: () => void;
   onReset: () => void;
   availableYears?: number[];
+  availableTiers?: string[];
 }
 
-export function FilterBar({ filters, onFiltersChange, onApply, onReset, availableYears = [] }: FilterBarProps) {
+export function FilterBar({ filters, onFiltersChange, onApply, onReset, availableYears = [], availableTiers = [] }: FilterBarProps) {
   return (
     <div className="bg-white px-10 py-5 border-b border-forest-100 flex gap-5 flex-wrap items-end shadow-sm">
       {/* Month/Year Calendar Picker */}
@@ -56,12 +56,14 @@ export function FilterBar({ filters, onFiltersChange, onApply, onReset, availabl
         selected={filters.categories}
         onChange={(v) => onFiltersChange({ categories: v as Category[] })}
       />
-      <MultiSelectFilter
-        label="Tier"
-        options={ALLOWED_TIERS}
-        selected={filters.tiers}
-        onChange={(v) => onFiltersChange({ tiers: v as string[] })}
-      />
+      {availableTiers.length > 0 && (
+        <MultiSelectFilter
+          label="Tier"
+          options={availableTiers}
+          selected={filters.tiers}
+          onChange={(v) => onFiltersChange({ tiers: v as string[] })}
+        />
+      )}
 
       <div className="flex gap-2.5 ml-auto">
         <button

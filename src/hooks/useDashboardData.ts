@@ -115,6 +115,7 @@ interface DashboardData {
   articles: Mention[];
   totalArticles: number;
   availableYears: number[];
+  availableTiers: string[];
   isLoading: boolean;
   error: string | null;
 }
@@ -131,6 +132,7 @@ export function useDashboardData(filters: DashboardFilters, enabled: boolean = t
     articles: [],
     totalArticles: 0,
     availableYears: [],
+    availableTiers: [],
     isLoading: true,
     error: null,
   });
@@ -199,6 +201,16 @@ export function useDashboardData(filters: DashboardFilters, enabled: boolean = t
         if (!isNaN(year)) yearsSet.add(year);
       });
       const availableYears = Array.from(yearsSet).sort((a, b) => b - a);
+
+      // Fetch available tiers from data (without filters)
+      const allTierData = await fetchAllWithPagination<{ tier: string | null }>(
+        supabase, 'mentions', 'tier', {}
+      );
+      const tiersSet = new Set<string>();
+      allTierData.forEach((m) => {
+        if (m.tier) tiersSet.add(m.tier);
+      });
+      const availableTiers = Array.from(tiersSet).sort();
 
       // Calculate metrics
       const metrics: MetricsSummary = {
@@ -438,6 +450,7 @@ export function useDashboardData(filters: DashboardFilters, enabled: boolean = t
         articles: sortedMentions,
         totalArticles,
         availableYears,
+        availableTiers,
         isLoading: false,
         error: null,
       });
