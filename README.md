@@ -1,6 +1,6 @@
 # VCBS Dashboard
 
-Dashboard phân tích Media Monitoring cho VCBS (Vietcombank Securities), xây dựng trên Next.js 14 + Supabase.
+Dashboard phân tích Media Monitoring cho VCBS (Vietcombank Securities), xây dựng trên Next.js 14 + Supabase (PostgreSQL).
 
 ## Demo
 
@@ -62,6 +62,97 @@ Truy cập demo tại: **https://vcbs-dashboard.vercel.app**
 - Upload history management
 - Report CRUD (Create, Read, Update, Delete)
 - Role-based access control (admin/user)
+
+---
+
+## File Templates
+
+Các file mẫu để tham khảo khi sử dụng hệ thống:
+
+| File | Mô tả |
+|------|-------|
+| [`prompt-vcbs-report.md`](prompt-vcbs-report.md) | Prompt để tạo báo cáo Social Listening bằng AI (bản chat interface) |
+| [`vcbs-report-template.md`](vcbs-report-template.md) | Báo cáo mẫu tháng 12/2025 - format chuẩn theo yêu cầu của khách hàng |
+| [`2025_t12_data_vcbs_upload.xlsx`](2025_t12_data_vcbs_upload.xlsx) | File Excel mẫu để upload dữ liệu vào hệ thống |
+
+### Cấu trúc file Excel upload
+
+File Excel cần có các cột sau:
+
+| Cột | Kiểu | Bắt buộc | Mô tả |
+|-----|------|----------|-------|
+| `Khách hàng` | string | ✓ | Tên thương hiệu (VCBS) |
+| `Phương tiện` | string | ✓ | Kênh: Báo mạng, Facebook, Youtube, Tiktok |
+| `Nguồn phát hành` | string | ✓ | Tên báo/page/channel |
+| `Ngày phát hành` | date | ✓ | Ngày đăng bài |
+| `Tiêu đề` | string | | Tiêu đề bài viết (Báo mạng) |
+| `Link` | string | | URL bài viết gốc |
+| `Tier` | string | | A, B, C, D (Báo mạng) |
+| `Nội dung` | string | ✓ | Nội dung bài viết |
+| `Like` | number | | Số lượt like |
+| `Share` | number | | Số lượt share |
+| `Comment` | number | | Số lượt comment |
+| `TTT` | number | | Tổng tương tác |
+| `Fanpage` | string | | Đánh dấu fanpage của VCBS |
+| `AI_THELOAINOIDUNG` | string | ✓ | Loại nội dung (xem bên dưới) |
+| `AI_SACTHAI` | string | ✓ | Sentiment: Tích cực, Trung tính, Tiêu cực |
+| `AI_NOTE` | string | | Tóm tắt nội dung |
+
+**Giá trị AI_THELOAINOIDUNG:**
+- `Tin trực tiếp về thương hiệu`: VCBS là đối tượng chính
+- `Tin tức thị trường`: VCBS chỉ được nhắc đến
+- `Bán hàng/Môi giới`: Nội dung quảng cáo, mời chào
+
+---
+
+## Quy trình sử dụng
+
+### Quy trình 1: Upload Data
+
+```
+1. Đăng nhập với tài khoản Admin
+   ↓
+2. Vào trang Admin > Upload Data (/admin/upload)
+   ↓
+3. Chọn file Excel theo format chuẩn (xem file mẫu)
+   ↓
+4. Hệ thống parse Excel và validate dữ liệu
+   ↓
+5. Data được import vào bảng `mentions`
+   ↓
+6. Dashboard tự động cập nhật với dữ liệu mới
+```
+
+**Lưu ý:**
+- File Excel phải có đúng tên cột như trong file mẫu
+- Cột `Phương tiện` chỉ chấp nhận: `Báo mạng`, `Facebook`, `Youtube`, `Tiktok`
+- Cột `AI_SACTHAI` chỉ chấp nhận: `Tích cực`, `Trung tính`, `Tiêu cực`
+- Upload history được lưu tại `/admin/history`
+
+### Quy trình 2: Tạo Báo cáo
+
+```
+1. Chuẩn bị dữ liệu Excel đã upload vào hệ thống
+   ↓
+2. Sử dụng prompt-vcbs-report.md với Gemini/ ChatGPT
+   ↓
+3. Upload file Excel vào AI và chạy prompt
+   ↓
+4. AI tạo báo cáo theo format markdown
+   ↓
+5. Đăng nhập Admin > Reports (/admin/reports)
+   ↓
+6. Tạo báo cáo mới, paste nội dung markdown
+   ↓
+7. Preview và lưu báo cáo
+   ↓
+8. User có thể xem và xuất PDF từ Dashboard
+```
+
+**Loại báo cáo:**
+- **Nhận định (nhan_dinh)**: Báo cáo Phân tích theo tháng
+- **Báo cáo Ngành (bao_cao_nganh)**: Báo cáo chuyên sâu ngành chứng khoán theo tháng (phần này Khách hàng không yêu cầu nên bỏ cũng được)
+- **Phụ lục (phu_luc)**: Không phân theo tháng/năm, chỉ hiển thị 1 phụ lục duy nhất
 
 ## Cấu trúc thư mục
 
@@ -151,6 +242,9 @@ src/
 │   └── index.ts                  # TypeScript type definitions
 │
 └── middleware.ts                 # Next.js middleware (auth protection)
+
+supabase/
+└── schema.sql                    # Database schema (run in SQL Editor)
 ```
 
 ## Database Schema (Supabase)
@@ -188,6 +282,21 @@ type ContentType =
 type Category = 'Cổ phiếu' | 'Trái phiếu' | 'Chứng chỉ quỹ' | ... | 'Khác'
 ```
 
+## API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/data` | Dashboard data với filters |
+| POST | `/api/upload` | Upload Excel file |
+| GET | `/api/upload/history` | Upload history list |
+| DELETE | `/api/upload/[id]` | Delete upload batch |
+| GET | `/api/reports` | List reports |
+| POST | `/api/reports` | Create report |
+| GET | `/api/reports/[id]` | Get report detail |
+| PUT | `/api/reports/[id]` | Update report |
+| DELETE | `/api/reports/[id]` | Delete report |
+| GET | `/api/export-pdf/[id]` | Export report to PDF |
+
 ## Environment Variables
 
 ```env
@@ -211,21 +320,6 @@ npm run build
 npm start
 ```
 
-## API Endpoints
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/data` | Dashboard data với filters |
-| POST | `/api/upload` | Upload Excel file |
-| GET | `/api/upload/history` | Upload history list |
-| DELETE | `/api/upload/[id]` | Delete upload batch |
-| GET | `/api/reports` | List reports |
-| POST | `/api/reports` | Create report |
-| GET | `/api/reports/[id]` | Get report detail |
-| PUT | `/api/reports/[id]` | Update report |
-| DELETE | `/api/reports/[id]` | Delete report |
-| GET | `/api/export-pdf/[id]` | Export report to PDF |
-
 ## PDF Export
 
 Hệ thống export PDF có 2 mode:
@@ -237,22 +331,3 @@ Hệ thống export PDF có 2 mode:
 2. **Browser Print (Fallback)**: Mở popup với styled HTML -> Print dialog
    - Tự động fallback khi server PDF fail
    - Hoạt động trên mọi environment
-
-## Deployment
-
-### Vercel
-
-```bash
-# Deploy via Vercel CLI
-vercel deploy
-
-# Or connect GitHub repo to Vercel
-```
-
-### Self-hosted (với Puppeteer)
-
-Để enable server-side PDF:
-
-1. Sử dụng `@sparticuz/chromium-min`
-2. Host Chromium binary trên S3/CDN
-3. Update `chromium.executablePath(url)`
