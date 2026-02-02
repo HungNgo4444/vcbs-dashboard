@@ -127,29 +127,29 @@ function generatePdfHtml(report: {
 
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      font-size: 11pt;
-      line-height: 1.6;
+      font-size: 9pt;
+      line-height: 1.4;
       color: #1a1a1a;
-      padding: 40px 50px;
+      padding: 30px 40px;
       max-width: 100%;
     }
 
     .header {
       text-align: center;
-      margin-bottom: 30px;
-      padding-bottom: 20px;
+      margin-bottom: 20px;
+      padding-bottom: 14px;
       border-bottom: 2px solid #52B788;
     }
 
     .header h1 {
-      font-size: 22pt;
+      font-size: 16pt;
       color: #1B4332;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
       font-weight: 700;
     }
 
     .header .date {
-      font-size: 12pt;
+      font-size: 10pt;
       color: #666;
     }
 
@@ -157,24 +157,24 @@ function generatePdfHtml(report: {
       max-width: 100%;
     }
 
-    h1 { font-size: 18pt; color: #1B4332; margin: 24px 0 12px; border-bottom: 1px solid #D8F3DC; padding-bottom: 8px; }
-    h2 { font-size: 14pt; color: #1B4332; margin: 20px 0 10px; }
-    h3 { font-size: 12pt; color: #1B4332; margin: 16px 0 8px; }
+    h1 { font-size: 13pt; color: #1B4332; margin: 16px 0 8px; border-bottom: 1px solid #D8F3DC; padding-bottom: 6px; }
+    h2 { font-size: 11pt; color: #1B4332; margin: 14px 0 6px; }
+    h3 { font-size: 10pt; color: #1B4332; margin: 10px 0 5px; }
 
-    p { margin: 10px 0; text-align: justify; }
+    p { margin: 6px 0; text-align: justify; }
 
     a { color: #2D6A4F; text-decoration: underline; }
 
     strong { color: #1B4332; font-weight: 600; }
 
-    ul, ol { margin: 10px 0 10px 24px; }
-    li { margin: 4px 0; }
+    ul, ol { margin: 6px 0 6px 20px; }
+    li { margin: 2px 0; }
 
     blockquote {
-      border-left: 4px solid #52B788;
+      border-left: 3px solid #52B788;
       background: #F0FDF4;
-      padding: 12px 16px;
-      margin: 16px 0;
+      padding: 8px 12px;
+      margin: 10px 0;
       color: #1B4332;
       font-style: normal;
     }
@@ -182,8 +182,8 @@ function generatePdfHtml(report: {
     table {
       width: 100%;
       border-collapse: collapse;
-      margin: 16px 0;
-      font-size: 10pt;
+      margin: 10px 0;
+      font-size: 8pt;
     }
 
     th {
@@ -191,12 +191,12 @@ function generatePdfHtml(report: {
       color: #1B4332;
       font-weight: 600;
       text-align: left;
-      padding: 10px 12px;
+      padding: 6px 8px;
       border: 1px solid #B7E4C7;
     }
 
     td {
-      padding: 8px 12px;
+      padding: 5px 8px;
       border: 1px solid #D8F3DC;
       vertical-align: top;
     }
@@ -207,18 +207,18 @@ function generatePdfHtml(report: {
 
     code {
       background: #F0F0F0;
-      padding: 2px 6px;
-      border-radius: 4px;
+      padding: 1px 4px;
+      border-radius: 3px;
       font-family: 'Consolas', monospace;
-      font-size: 10pt;
+      font-size: 8pt;
     }
 
     pre {
       background: #F5F5F5;
-      padding: 16px;
-      border-radius: 8px;
+      padding: 10px;
+      border-radius: 6px;
       overflow-x: auto;
-      margin: 16px 0;
+      margin: 10px 0;
     }
 
     pre code {
@@ -229,7 +229,7 @@ function generatePdfHtml(report: {
     hr {
       border: none;
       border-top: 1px solid #D8F3DC;
-      margin: 24px 0;
+      margin: 14px 0;
     }
 
     .mermaid-placeholder {
@@ -243,17 +243,17 @@ function generatePdfHtml(report: {
     }
 
     .footer {
-      margin-top: 40px;
-      padding-top: 16px;
+      margin-top: 24px;
+      padding-top: 10px;
       border-top: 1px solid #D8F3DC;
-      font-size: 9pt;
+      font-size: 8pt;
       color: #666;
       text-align: center;
     }
 
     @media print {
-      body { padding: 20px 30px; }
-      .header h1 { font-size: 18pt; }
+      body { padding: 15px 20px; }
+      .header h1 { font-size: 14pt; }
     }
   </style>
 </head>
